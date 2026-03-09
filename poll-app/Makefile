@@ -1,8 +1,9 @@
-.PHONY: start stop restart status install build dev clean help
+.PHONY: start stop restart status install build dev clean help firewall-open firewall-close
 
 # Configuration
 PORT ?= 4567
 PID_FILE = .polly.pid
+SCRIPTS_DIR = scripts
 
 help:
 	@echo "Polly - Local Network Polling App"
@@ -10,18 +11,22 @@ help:
 	@echo "Usage: make [target]"
 	@echo ""
 	@echo "Targets:"
-	@echo "  install   Install all dependencies (Ruby + Node)"
-	@echo "  build     Build the frontend for production"
-	@echo "  start     Start the server in background"
-	@echo "  stop      Stop the server"
-	@echo "  restart   Restart the server"
-	@echo "  status    Check if server is running"
-	@echo "  dev       Start frontend dev server (hot reload)"
-	@echo "  logs      Tail server logs"
-	@echo "  clean     Remove build artifacts"
+	@echo "  install        Install all dependencies (Ruby + Node)"
+	@echo "  build          Build the frontend for production"
+	@echo "  start          Build & start server in background"
+	@echo "  stop           Stop the server"
+	@echo "  restart        Restart the server"
+	@echo "  status         Check if server is running"
+	@echo "  dev            Start frontend dev server (hot reload)"
+	@echo "  logs           Tail server logs"
+	@echo "  clean          Remove build artifacts"
+	@echo ""
+	@echo "Firewall (requires sudo):"
+	@echo "  firewall-open  Open port for LAN access"
+	@echo "  firewall-close Close port"
 	@echo ""
 	@echo "Options:"
-	@echo "  PORT=4567 Set server port (default: 4567)"
+	@echo "  PORT=4567      Set server port (default: 4567)"
 
 install:
 	@echo "Installing Ruby dependencies..."
@@ -92,3 +97,10 @@ clean:
 	rm -f $(PID_FILE)
 	rm -f server/polly.log
 	@echo "Cleaned!"
+
+# Firewall management (macOS specific)
+firewall-open:
+	@$(SCRIPTS_DIR)/open_port.sh $(PORT)
+
+firewall-close:
+	@$(SCRIPTS_DIR)/close_port.sh $(PORT)
