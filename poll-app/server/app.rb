@@ -13,6 +13,15 @@ set :allow_origin, '*'
 set :allow_methods, 'GET,POST,OPTIONS'
 set :allow_headers, 'content-type'
 
+# Prevent caching of HTML pages (fixes mobile Safari refresh issues)
+before do
+  if request.path == '/' || request.path == '/admin' || request.path.end_with?('.html')
+    cache_control :no_cache, :no_store, :must_revalidate
+    headers['Pragma'] = 'no-cache'
+    headers['Expires'] = '0'
+  end
+end
+
 # WebSocket clients
 CLIENTS = []
 
