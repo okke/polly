@@ -22,8 +22,9 @@ before do
   end
 end
 
-# WebSocket clients
-CLIENTS = []
+# WebSocket clients - store as hash with role
+# { ws => { role: 'admin' | 'participant' } }
+CLIENTS = {}
 
 # In-memory vote storage
 VOTES = {}
@@ -65,13 +66,14 @@ def local_ip
   }&.ip_address || '127.0.0.1'
 end
 
-# Broadcast results to all connected clients
+# Broadcast results to admin clients only
 def broadcast_results
   results = calculate_results
   participant_count = VOTES.keys.length
   connected_clients = CLIENTS.length
+  admin_clients = CLIENTS.select { |_, info| info[:role] == 'admin' }
   
-  puts "[BROADCAST] Sending to #{connected_clients} clients"
+  puts "[BROADCAST] Sending to #{admin_clients.length} admin clients (#{connected_clients} total)"
   
   message = {
     type: 'results_update',
@@ -83,10 +85,10 @@ def broadcast_results
     }
   }.to_json
   
-  CLIENTS.each do |client|
+  admin_clients.each do |client, _|
     begin
       client.send(message)
-      puts "[BROADCAST] Sent to client successfully"
+      puts "[BROADCAST] Sent to admin client"
     rescue => e
       puts "[WS] Error sending to client: #{e.message}"
     end
@@ -94,14 +96,18 @@ def broadcast_results
 end
 
 # WebSocket endpoint
+# Query param: ?role=admin for admin panels
 get '/ws' do
   if Faye::WebSocket.websocket?(request.env)
+    role = params[:role] == 'admin' ? 'admin' : 'participant'
+    
     # Ping every 15 seconds to keep connection alive
     ws = Faye::WebSocket.new(request.env, nil, { ping: 15 })
 
     ws.on :open do |event|
-      CLIENTS << ws
-      puts "[WS] Client connected. Total: #{CLIENTS.length}"
+      CLIENTS[ws] = { role: role }
+      admin_count = CLIENTS.count { |_, info| info[:role] == 'admin' }
+      puts "[WS] #{role.upcase} connected. Total: #{CLIENTS.length} (#{admin_count} admins)"
       
       # Send initial data to the new client
       ws.send({
@@ -113,15 +119,17 @@ get '/ws' do
         }
       }.to_json)
       
-      # Broadcast updated count to all other clients
+      # Broadcast updated count to admin clients
       broadcast_results
     end
 
     ws.on :close do |event|
+      role = CLIENTS[ws]&.dig(:role) || 'unknown'
       CLIENTS.delete(ws)
-      puts "[WS] Client disconnected. Total: #{CLIENTS.length}"
+      admin_count = CLIENTS.count { |_, info| info[:role] == 'admin' }
+      puts "[WS] #{role.upcase} disconnected. Total: #{CLIENTS.length} (#{admin_count} admins)"
       
-      # Broadcast updated count to remaining clients
+      # Broadcast updated count to remaining admin clients
       broadcast_results
     end
     

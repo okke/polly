@@ -70,6 +70,7 @@ async function fetchData() {
 
 // Handle realtime updates
 function handleResultsUpdate(data) {
+  console.log('[Admin] Received update at', new Date().toISOString(), data)
   results.value = data.results
   participantCount.value = data.participant_count
   if (data.connected_clients !== undefined) {
@@ -100,7 +101,7 @@ let unsubscribe = null
 
 onMounted(async () => {
   await fetchData()
-  connect()
+  connect('admin')  // Connect as admin to receive broadcasts
   unsubscribe = on('results_update', handleResultsUpdate)
   on('init', handleResultsUpdate)
 })

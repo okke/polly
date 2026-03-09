@@ -4,19 +4,32 @@ const socket = ref(null)
 const isConnected = ref(false)
 const lastMessage = ref(null)
 let heartbeatTimer = null
+let lastConnectAttempt = 0
+let currentRole = 'participant'
 
 // Event handlers stored globally to persist across component instances
 const eventHandlers = new Map()
 
 function createSocket() {
-  // Clean up any existing socket
+  // Debounce - don't create socket if we tried recently (within 1 second)
+  const now = Date.now()
+  if (now - lastConnectAttempt < 1000) {
+    return
+  }
+  lastConnectAttempt = now
+  
+  // If socket exists and is open or connecting, don't create new one
   if (socket.value) {
+    const state = socket.value.readyState
+    if (state === WebSocket.OPEN || state === WebSocket.CONNECTING) {
+      return
+    }
+    // Clean up closed socket
     try {
       socket.value.onopen = null
       socket.value.onclose = null
       socket.value.onerror = null
       socket.value.onmessage = null
-      socket.value.close()
     } catch (e) {
       // ignore
     }
@@ -25,7 +38,8 @@ function createSocket() {
   
   const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
   const host = window.location.host
-  const wsUrl = `${protocol}//${host}/ws`
+  const roleParam = currentRole === 'admin' ? '?role=admin' : ''
+  const wsUrl = `${protocol}//${host}/ws${roleParam}`
   
   console.log('[WS] Creating new connection to:', wsUrl)
   
@@ -40,6 +54,15 @@ function createSocket() {
     ws.onclose = () => {
       isConnected.value = false
       console.log('[WS] Disconnected')
+      // Try to reconnect quickly if page is visible
+      if (document.visibilityState === 'visible') {
+        setTimeout(() => {
+          if (!socket.value || socket.value.readyState === WebSocket.CLOSED) {
+            console.log('[WS] Auto-reconnecting after disconnect...')
+            createSocket()
+          }
+        }, 500)
+      }
     }
     
     ws.onerror = (error) => {
@@ -49,11 +72,13 @@ function createSocket() {
     ws.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data)
+        console.log('[WS] Message received:', data.type, 'at', new Date().toISOString())
         lastMessage.value = data
         
         // Emit to registered handlers
         const handlers = eventHandlers.get(data.type)
         if (handlers) {
+          console.log('[WS] Calling', handlers.size, 'handlers for', data.type)
           handlers.forEach(handler => handler(data.data))
         }
       } catch (e) {
@@ -67,7 +92,7 @@ function createSocket() {
   }
 }
 
-// Heartbeat - ensures connection is alive, runs every 2 seconds
+// Heartbeat - ensures connection is alive, runs every 5 seconds
 function checkConnection() {
   if (document.visibilityState !== 'visible') {
     return // Don't check when page is hidden
@@ -75,32 +100,29 @@ function checkConnection() {
   
   const ws = socket.value
   
-  // No socket or socket is closed/closing - reconnect
-  if (!ws || ws.readyState === WebSocket.CLOSED || ws.readyState === WebSocket.CLOSING) {
-    console.log('[WS] Heartbeat: no connection, creating new socket')
+  // No socket or socket is closed - reconnect
+  if (!ws || ws.readyState === WebSocket.CLOSED) {
+    console.log('[WS] Heartbeat: no active connection, creating socket')
     createSocket()
     return
   }
   
-  // Socket exists and is open - all good
-  if (ws.readyState === WebSocket.OPEN) {
+  // Socket is closing - wait for it to finish
+  if (ws.readyState === WebSocket.CLOSING) {
     return
   }
   
-  // Socket is connecting - wait
-  if (ws.readyState === WebSocket.CONNECTING) {
-    return
-  }
+  // Socket is connecting or open - all good
 }
 
 function startHeartbeat() {
   if (heartbeatTimer) return
   
-  // Check immediately
-  checkConnection()
+  // Connect immediately
+  createSocket()
   
-  // Then check every 2 seconds
-  heartbeatTimer = setInterval(checkConnection, 2000)
+  // Then check every 5 seconds (less aggressive)
+  heartbeatTimer = setInterval(checkConnection, 5000)
 }
 
 function stopHeartbeat() {
@@ -111,7 +133,8 @@ function stopHeartbeat() {
 }
 
 export function useSocket() {
-  function connect() {
+  function connect(role = 'participant') {
+    currentRole = role
     startHeartbeat()
   }
   
@@ -134,6 +157,7 @@ export function useSocket() {
       eventHandlers.set(eventType, new Set())
     }
     eventHandlers.get(eventType).add(handler)
+    console.log('[WS] Registered handler for', eventType, '- total handlers:', eventHandlers.get(eventType).size)
     
     // Return unsubscribe function
     return () => {
