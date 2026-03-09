@@ -10,6 +10,10 @@ const props = defineProps({
   participantCount: {
     type: Number,
     default: 0
+  },
+  connectedClients: {
+    type: Number,
+    default: 0
   }
 })
 
@@ -69,13 +73,18 @@ async function copyUrl() {
       </div>
     </div>
     
-    <!-- Participant Counter -->
+    <!-- Connection Counters -->
     <div class="counter-container">
       <div class="counter terminal-badge">
         <span class="prompt">></span>
-        <span class="command">{{ participantCount }}</span>
-        <span class="output">connected</span>
+        <span class="command">{{ connectedClients }}</span>
+        <span class="output">live</span>
         <span class="cursor">▌</span>
+      </div>
+      <div class="counter terminal-badge secondary">
+        <span class="prompt">></span>
+        <span class="command">{{ participantCount }}</span>
+        <span class="output">voted</span>
       </div>
     </div>
   </div>

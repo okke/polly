@@ -14,6 +14,7 @@ const poll = ref(null)
 const results = ref({})
 const participantCount = ref(0)
 const serverInfo = ref(null)
+const connectedClients = ref(0)
 const isLoading = ref(true)
 const error = ref(null)
 const lastUpdate = ref(null)
@@ -58,6 +59,7 @@ async function fetchData() {
     results.value = resultsRes.data.results
     participantCount.value = resultsRes.data.participant_count
     serverInfo.value = infoRes.data
+    connectedClients.value = infoRes.data.connected_clients || 0
     lastUpdate.value = new Date().toISOString()
     isLoading.value = false
   } catch (e) {
@@ -70,6 +72,9 @@ async function fetchData() {
 function handleResultsUpdate(data) {
   results.value = data.results
   participantCount.value = data.participant_count
+  if (data.connected_clients !== undefined) {
+    connectedClients.value = data.connected_clients
+  }
   lastUpdate.value = data.timestamp || new Date().toISOString()
 }
 
@@ -150,6 +155,7 @@ onUnmounted(() => {
             <ConnectionPanel 
               :serverInfo="serverInfo"
               :participantCount="participantCount"
+              :connectedClients="connectedClients"
             />
             
             <ControlBar 

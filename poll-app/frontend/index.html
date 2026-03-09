@@ -8,9 +8,60 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    /* Fallback styles if Vue fails to load */
+    body { 
+      background: #0d0d0d; 
+      color: #f5f5f7; 
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      min-height: 100vh;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #app:empty::after {
+      content: 'Loading Polly...';
+      font-size: 1.25rem;
+      opacity: 0.6;
+    }
+    #app-error {
+      display: none;
+      text-align: center;
+      padding: 2rem;
+    }
+    #app-error.show {
+      display: block;
+    }
+    #app-error h2 { 
+      color: #ff453a; 
+      margin-bottom: 1rem;
+    }
+    #app-error pre {
+      background: #1a1a1a;
+      padding: 1rem;
+      border-radius: 8px;
+      overflow: auto;
+      max-width: 90vw;
+      text-align: left;
+      font-size: 0.875rem;
+    }
+  </style>
 </head>
 <body>
   <div id="app"></div>
+  <div id="app-error">
+    <h2>Something went wrong</h2>
+    <p>Check browser console for details</p>
+    <pre id="error-details"></pre>
+  </div>
+  <script>
+    window.onerror = function(msg, url, line, col, error) {
+      document.getElementById('app-error').classList.add('show');
+      document.getElementById('error-details').textContent = msg + '\n' + (error?.stack || '');
+      return false;
+    };
+  </script>
   <script type="module" src="/src/main.js"></script>
 </body>
 </html>

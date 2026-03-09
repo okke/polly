@@ -18,7 +18,7 @@ defineProps({
         </div>
         
         <div class="success-text">
-          <span class="terminal-prompt">[OK]</span>
+          <span class="terminal-prompt">[ OK ]</span>
           <span class="terminal-message">votes_recorded</span>
         </div>
         

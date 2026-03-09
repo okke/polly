@@ -60,46 +60,71 @@ end
 def broadcast_results
   results = calculate_results
   participant_count = VOTES.keys.length
+  connected_clients = CLIENTS.length
+  
+  puts "[BROADCAST] Sending to #{connected_clients} clients"
   
   message = {
     type: 'results_update',
     data: {
       results: results,
       participant_count: participant_count,
+      connected_clients: connected_clients,
       timestamp: Time.now.utc.iso8601
     }
   }.to_json
   
   CLIENTS.each do |client|
-    client.send(message)
+    begin
+      client.send(message)
+      puts "[BROADCAST] Sent to client successfully"
+    rescue => e
+      puts "[WS] Error sending to client: #{e.message}"
+    end
   end
 end
 
-# WebSocket middleware
-use Rack::Config do |env|
-  if Faye::WebSocket.websocket?(env)
-    ws = Faye::WebSocket.new(env)
+# WebSocket endpoint
+get '/ws' do
+  if Faye::WebSocket.websocket?(request.env)
+    # Ping every 15 seconds to keep connection alive
+    ws = Faye::WebSocket.new(request.env, nil, { ping: 15 })
 
     ws.on :open do |event|
       CLIENTS << ws
       puts "[WS] Client connected. Total: #{CLIENTS.length}"
       
-      # Send initial data
+      # Send initial data to the new client
       ws.send({
         type: 'init',
         data: {
           results: calculate_results,
-          participant_count: VOTES.keys.length
+          participant_count: VOTES.keys.length,
+          connected_clients: CLIENTS.length
         }
       }.to_json)
+      
+      # Broadcast updated count to all other clients
+      broadcast_results
     end
 
     ws.on :close do |event|
       CLIENTS.delete(ws)
       puts "[WS] Client disconnected. Total: #{CLIENTS.length}"
+      
+      # Broadcast updated count to remaining clients
+      broadcast_results
+    end
+    
+    ws.on :error do |event|
+      puts "[WS] Error: #{event.message}"
     end
 
+    # Return async Rack response
     ws.rack_response
+  else
+    status 400
+    "WebSocket connection required"
   end
 end
 

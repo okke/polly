@@ -1,13 +1,15 @@
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import axios from 'axios'
 import { useParticipant } from '../composables/useParticipant.js'
+import { useSocket } from '../composables/useSocket.js'
 import PollHeader from '../components/PollHeader.vue'
 import StatementCard from '../components/StatementCard.vue'
 import SubmitButton from '../components/SubmitButton.vue'
 import SuccessOverlay from '../components/SuccessOverlay.vue'
 
 const { participantId } = useParticipant()
+const { connect, disconnect } = useSocket()
 
 const poll = ref(null)
 const votes = ref({})
@@ -57,17 +59,26 @@ async function fetchPoll() {
 async function handleVote(statementId, voteValue) {
   votes.value[statementId] = voteValue
   
-  // Submit vote immediately
-  if (!participantId.value) return
+  // Get participant ID (should always be available now)
+  const pid = participantId.value
+  if (!pid) {
+    console.error('No participant ID available')
+    return
+  }
   
   try {
-    await axios.post('/api/vote', {
-      participant_id: participantId.value,
+    console.log(`[Vote] ${pid.substring(0,8)}... -> ${statementId}: ${voteValue}`)
+    const response = await axios.post('/api/vote', {
+      participant_id: pid,
       statement_id: statementId,
       vote: voteValue
     })
+    console.log('[Vote] Response:', response.data)
   } catch (e) {
     console.error('Failed to submit vote:', e)
+    // Show error to user
+    error.value = 'Failed to submit vote. Check your connection.'
+    setTimeout(() => { error.value = null }, 3000)
   }
 }
 
@@ -95,6 +106,11 @@ async function submitAllVotes() {
 onMounted(() => {
   loadSavedVotes()
   fetchPoll()
+  connect() // Connect to WebSocket for live tracking
+})
+
+onUnmounted(() => {
+  disconnect()
 })
 </script>
 

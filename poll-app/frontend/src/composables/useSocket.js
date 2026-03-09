@@ -15,45 +15,51 @@ export function useSocket() {
     
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
     const host = window.location.host
-    const wsUrl = `${protocol}//${host}/`
+    const wsUrl = `${protocol}//${host}/ws`
     
-    socket.value = new WebSocket(wsUrl)
+    console.log('[WS] Connecting to:', wsUrl)
     
-    socket.value.onopen = () => {
-      isConnected.value = true
-      console.log('[WS] Connected')
-    }
-    
-    socket.value.onclose = () => {
-      isConnected.value = false
-      console.log('[WS] Disconnected')
+    try {
+      socket.value = new WebSocket(wsUrl)
       
-      // Auto-reconnect after 3 seconds
-      setTimeout(() => {
-        if (!isConnected.value) {
-          console.log('[WS] Reconnecting...')
-          connect()
-        }
-      }, 3000)
-    }
-    
-    socket.value.onerror = (error) => {
-      console.error('[WS] Error:', error)
-    }
-    
-    socket.value.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data)
-        lastMessage.value = data
-        
-        // Emit to registered handlers
-        const handlers = eventHandlers.get(data.type)
-        if (handlers) {
-          handlers.forEach(handler => handler(data.data))
-        }
-      } catch (e) {
-        console.error('[WS] Failed to parse message:', e)
+      socket.value.onopen = () => {
+        isConnected.value = true
+        console.log('[WS] Connected')
       }
+      
+      socket.value.onclose = () => {
+        isConnected.value = false
+        console.log('[WS] Disconnected')
+        
+        // Auto-reconnect after 3 seconds
+        setTimeout(() => {
+          if (!isConnected.value) {
+            console.log('[WS] Reconnecting...')
+            connect()
+          }
+        }, 3000)
+      }
+      
+      socket.value.onerror = (error) => {
+        console.error('[WS] Error:', error)
+      }
+      
+      socket.value.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data)
+          lastMessage.value = data
+          
+          // Emit to registered handlers
+          const handlers = eventHandlers.get(data.type)
+          if (handlers) {
+            handlers.forEach(handler => handler(data.data))
+          }
+        } catch (e) {
+          console.error('[WS] Failed to parse message:', e)
+        }
+      }
+    } catch (e) {
+      console.error('[WS] Failed to create WebSocket:', e)
     }
   }
   
