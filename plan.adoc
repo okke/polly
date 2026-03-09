@@ -1,0 +1,603 @@
+= Local Network Poll Application
+:author: Okke van 't Verlaat
+:revdate: 2026-03-09
+:toc:
+:toclevels: 3
+:icons: font
+:source-highlighter: rouge
+
+== 1. Overview
+
+This document describes the design and implementation plan for a local-network
+polling application.
+
+The application allows a host to run a poll session on a laptop (MacBook) and
+participants to join using their web browser via a URL shown on the host screen.
+Participants must be connected to the same Wi-Fi network.
+
+Participants respond to statements using a 4-point agreement scale.
+
+The application is designed to be lightweight and easy to run locally.
+
+Key design goals:
+
+* No cloud dependencies
+* Minimal infrastructure
+* Simple configuration
+* Realtime results
+* Mobile friendly
+
+The system uses:
+
+* Vue.js frontend
+* Ruby backend
+* WebSockets for realtime updates
+* JSON for poll definitions
+* QR code for easy participant access
+
+== 2. Functional Requirements
+
+=== 2.1 Host Features
+
+The host can:
+
+* Start the poll server
+* Load a poll from a JSON file
+* Display the participant join URL
+* Display a QR code for easy joining
+* View live results
+* Monitor the number of participants
+* Export results
+
+=== 2.2 Participant Features
+
+Participants can:
+
+* Join the poll using a browser
+* Scan a QR code to access the poll
+* View poll statements
+* Select one answer per statement
+* Change their vote if allowed
+* Submit responses
+* Receive confirmation
+
+=== 2.3 Voting Scale
+
+Each statement supports four answer options:
+
+* Strongly Agree
+* Agree
+* Disagree
+* Strongly Disagree
+
+Internally these are represented as:
+
+[source,json]
+----
+strongly_agree
+agree
+disagree
+strongly_disagree
+----
+
+== 3. System Architecture
+
+The system follows a simple client-server architecture.
+
+[plantuml]
+----
+@startuml
+node "Host Machine (MacBook)" {
+
+  component "Ruby Poll Server" {
+    component "REST API"
+    component "WebSocket Server"
+    component "Poll Loader"
+    component "Vote Store"
+  }
+
+  component "Vue Frontend (built)"
+}
+
+node "Local WiFi Network"
+
+node "Participants" {
+  component "Mobile Browser"
+  component "Laptop Browser"
+}
+
+Participants --> "Ruby Poll Server"
+@enduml
+----
+
+Responsibilities:
+
+Backend:
+
+* Serve frontend assets
+* Provide poll data
+* Store votes
+* Broadcast realtime updates
+
+Frontend:
+
+* Render poll UI
+* Send votes
+* Subscribe to realtime updates
+* Render charts
+
+== 4. Technology Stack
+
+=== 4.1 Frontend
+
+Technologies:
+
+* Vue 3
+* Vite
+* Pinia (state management)
+* Axios (REST API)
+* Socket.IO client (WebSocket communication)
+* Chart.js (visualization)
+* qrcode.vue (QR code generation)
+
+=== 4.2 Backend
+
+Technologies:
+
+* Ruby
+* Sinatra
+* Puma
+* socket.io-ruby or faye-websocket
+* JSON storage
+
+The backend must bind to all network interfaces to allow LAN access.
+
+[source,ruby]
+----
+set :bind, "0.0.0.0"
+----
+
+=== 4.3 Network Requirements
+
+Participants must be on the same network as the host.
+
+Typical access URL:
+
+----
+http://192.168.1.42:4567
+----
+
+== 5. Project Structure
+
+[source]
+----
+poll-app/
+
+  server/
+    app.rb
+    poll.json
+    votes.json
+
+  frontend/
+    package.json
+    vite.config.js
+
+    src/
+      main.js
+      router.js
+
+      views/
+        PollView.vue
+        AdminView.vue
+
+      components/
+        StatementCard.vue
+        VoteButtons.vue
+        ResultsChart.vue
+        JoinQRCode.vue
+
+    dist/
+----
+
+== 6. Poll Definition
+
+Polls are defined in a JSON file.
+
+Example:
+
+[source,json]
+----
+{
+  "id": "poll1",
+  "title": "Technology Opinions",
+  "statements": [
+    {
+      "id": "s1",
+      "text": "AI will replace most programming jobs."
+    },
+    {
+      "id": "s2",
+      "text": "Remote work is better than office work."
+    },
+    {
+      "id": "s3",
+      "text": "Open source will dominate enterprise software."
+    }
+  ]
+}
+----
+
+Poll file location:
+
+----
+server/poll.json
+----
+
+== 7. Data Model
+
+=== 7.1 Vote
+
+[source,json]
+----
+{
+  "participant_id": "uuid",
+  "statement_id": "s1",
+  "vote": "agree",
+  "timestamp": "2026-03-09T12:00:00Z"
+}
+----
+
+Votes may be stored:
+
+* In memory
+* Persisted to `votes.json`
+
+=== 7.2 Results Structure
+
+[source,json]
+----
+{
+  "s1": {
+    "strongly_agree": 4,
+    "agree": 10,
+    "disagree": 2,
+    "strongly_disagree": 1
+  }
+}
+----
+
+== 8. API Design
+
+=== 8.1 Get Poll
+
+Request:
+
+----
+GET /api/poll
+----
+
+Response:
+
+[source,json]
+----
+{
+  "title": "Technology Opinions",
+  "statements": [...]
+}
+----
+
+=== 8.2 Submit Vote
+
+Request:
+
+----
+POST /api/vote
+----
+
+[source,json]
+----
+{
+  "participant_id": "uuid",
+  "statement_id": "s1",
+  "vote": "agree"
+}
+----
+
+Response:
+
+[source,json]
+----
+{
+  "status": "ok"
+}
+----
+
+=== 8.3 Get Results
+
+----
+GET /api/results
+----
+
+Returns aggregated vote counts.
+
+=== 8.4 Export Results
+
+----
+GET /api/export
+----
+
+Returns CSV file containing all votes.
+
+== 9. Realtime Updates
+
+Realtime updates are required from the beginning of the project.
+
+When a vote is submitted:
+
+. Server stores vote
+. Server recalculates results
+. Server broadcasts update
+. Admin dashboard updates automatically
+
+Event flow:
+
+[plantuml]
+----
+@startuml
+
+participant Browser
+participant Server
+participant Dashboard
+
+Browser -> Server : submit vote
+Server -> Server : store vote
+Server -> Dashboard : websocket update
+Dashboard -> Dashboard : refresh charts
+
+@enduml
+----
+
+WebSocket event:
+
+[source,json]
+----
+{
+  "type": "results_update",
+  "data": {...}
+}
+----
+
+Participants do not need live updates,
+but the admin dashboard does.
+
+== 10. QR Code Join Mechanism
+
+To simplify joining the poll, the host dashboard displays a QR code.
+
+The QR code contains the participant URL.
+
+Example:
+
+----
+http://192.168.1.42:4567
+----
+
+Vue component:
+
+----
+JoinQRCode.vue
+----
+
+Library:
+
+----
+qrcode.vue
+----
+
+Workflow:
+
+. Host opens admin page
+. System detects host IP
+. Join URL generated
+. QR code rendered
+. Participants scan with phone
+
+== 11. Frontend Design
+
+=== 11.1 Participant Interface
+
+Page:
+
+----
+/
+----
+
+UI flow:
+
+. Load poll definition
+. Render list of statements
+. User selects answer
+. Vote sent to backend
+. Confirmation displayed
+
+Component structure:
+
+----
+PollView
+  StatementCard
+    VoteButtons
+----
+
+=== 11.2 Admin Dashboard
+
+Page:
+
+----
+/admin
+----
+
+Features:
+
+* Join URL display
+* QR code display
+* Participant counter
+* Live vote charts
+* Export results button
+
+Component structure:
+
+----
+AdminView
+  JoinQRCode
+  ResultsChart
+----
+
+Charts update when WebSocket messages arrive.
+
+== 12. Network Configuration (macOS)
+
+To allow participants to connect to the host machine:
+
+=== 12.1 Determine IP Address
+
+Terminal command:
+
+----
+ipconfig getifaddr en0
+----
+
+Example output:
+
+----
+192.168.1.42
+----
+
+=== 12.2 Bind Server to Network
+
+[source,ruby]
+----
+set :bind, "0.0.0.0"
+----
+
+=== 12.3 Firewall Settings
+
+macOS Settings:
+
+----
+Privacy & Security
+Firewall
+Firewall Options
+----
+
+Allow:
+
+* Ruby
+* Terminal
+
+=== 12.4 Server Startup
+
+----
+cd server
+ruby app.rb
+----
+
+Participants connect using:
+
+----
+http://<host-ip>:4567
+----
+
+== 13. Duplicate Vote Prevention
+
+Each participant receives a unique identifier.
+
+Generated in the browser:
+
+[source,javascript]
+----
+uuid = crypto.randomUUID()
+localStorage.setItem("participantId", uuid)
+----
+
+The identifier is sent with every vote.
+
+Server may enforce:
+
+* One vote per statement per participant
+
+== 14. Result Visualization
+
+Charts show vote distribution.
+
+Example chart:
+
+----
+Strongly Agree       ███████
+Agree                █████████████
+Disagree             ███
+Strongly Disagree    █
+----
+
+Recommended library:
+
+* Chart.js
+
+Charts update when realtime events arrive.
+
+== 15. Security Considerations
+
+The application runs only on a local network.
+
+Basic precautions:
+
+* No external network exposure
+* CORS restricted to local origin
+* Random session ID optional
+
+Example:
+
+----
+http://192.168.1.42:4567/poll/abc123
+----
+
+== 16. Deployment and Usage
+
+Steps:
+
+1. Start backend server
+2. Open admin dashboard
+3. Display QR code
+4. Participants join
+5. Participants vote
+6. Host observes live results
+7. Export results after session
+
+== 17. Future Improvements
+
+Possible enhancements:
+
+* Multiple simultaneous polls
+* Timed voting rounds
+* Anonymous vs identified voting
+* Vote locking
+* Word cloud analysis
+* Participant nickname support
+* Presentation mode
+
+== 18. Estimated Development Effort
+
+Approximate time estimate:
+
+|===
+|Component |Estimated Time
+
+Backend API | 2 hours
+WebSocket realtime layer | 2 hours
+Vue poll interface | 3 hours
+Admin dashboard | 3 hours
+Charts integration | 1 hour
+QR code join | 30 minutes
+Network setup | 30 minutes
+
+|Total | ~12 hours
+|===
