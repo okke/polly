@@ -132,13 +132,23 @@ Frontend:
 
 Technologies:
 
-* Vue 3
+* Vue 3 (Composition API)
 * Vite
 * Pinia (state management)
 * Axios (REST API)
 * Socket.IO client (WebSocket communication)
 * Chart.js (visualization)
 * qrcode.vue (QR code generation)
+* CSS custom properties (design tokens)
+* @vueuse/core (composables for motion, dark mode)
+* @vueuse/motion (smooth animations)
+
+Styling approach:
+
+* Scoped component styles with CSS custom properties
+* No heavy CSS framework - custom design system
+* CSS variables for theming (dark/light mode)
+* Modern CSS features: backdrop-filter, container queries
 
 === 4.2 Backend
 
@@ -182,19 +192,52 @@ poll-app/
     package.json
     vite.config.js
 
+    public/
+      fonts/              # SF Mono, JetBrains Mono fallbacks
+
     src/
       main.js
       router.js
 
+      styles/
+        tokens.css        # Design tokens (colors, spacing, fonts)
+        base.css          # Reset and global styles
+        animations.css    # Keyframes and transitions
+        utilities.css     # Helper classes
+
+      composables/
+        useTheme.js       # Dark/light mode toggle
+        useParticipant.js # Participant ID management
+        useSocket.js      # WebSocket connection
+
       views/
-        PollView.vue
-        AdminView.vue
+        PollView.vue      # Participant voting page
+        AdminView.vue     # Host dashboard
 
       components/
+        # Participant components
+        PollHeader.vue
         StatementCard.vue
+        StatementList.vue
         VoteButtons.vue
-        ResultsChart.vue
-        JoinQRCode.vue
+        SubmitButton.vue
+        SuccessOverlay.vue
+
+        # Admin components
+        ConnectionPanel.vue
+        TerminalURL.vue
+        QRCodeFrame.vue
+        ParticipantCounter.vue
+        ResultsGrid.vue
+        StatementResult.vue
+        ResultChart.vue
+        ControlBar.vue
+        ThemeToggle.vue
+
+        # Shared components
+        GlassCard.vue
+        TerminalBadge.vue
+        BlinkingCursor.vue
 
     dist/
 ----
@@ -404,7 +447,194 @@ Workflow:
 
 == 11. Frontend Design
 
-=== 11.1 Participant Interface
+=== 11.1 Design Philosophy
+
+The application follows a **macOS-inspired design language with a nerdy twist**.
+
+Core principles:
+
+* Clean, minimalist aesthetic inspired by Apple's Human Interface Guidelines
+* Subtle depth through shadows and layering
+* Glass morphism / frosted glass effects (backdrop blur)
+* Smooth micro-animations and transitions
+* Dark mode as the primary theme (with light mode option)
+* Monospace typography accents for the "nerdy" personality
+* Terminal/code-inspired visual elements
+
+=== 11.2 Color Palette
+
+The color scheme blends macOS vibrancy with a developer-friendly palette.
+
+==== Dark Mode (Primary)
+
+[source,css]
+----
+/* Background layers */
+--bg-primary: #1a1a1a;          /* Deep charcoal */
+--bg-secondary: #252525;        /* Card backgrounds */
+--bg-elevated: #2d2d2d;         /* Elevated surfaces */
+--bg-glass: rgba(45, 45, 45, 0.72);  /* Frosted glass */
+
+/* Text */
+--text-primary: #f5f5f7;        /* Apple white */
+--text-secondary: #a1a1a6;      /* Muted text */
+--text-accent: #00ff9f;         /* Matrix green - nerdy accent */
+
+/* Voting scale colors (inspired by syntax highlighting) */
+--strongly-agree: #7ee787;      /* GitHub green */
+--agree: #58a6ff;               /* Cool blue */
+--disagree: #f0883e;            /* Warm orange */
+--strongly-disagree: #f85149;   /* Soft red */
+
+/* System accents */
+--accent-primary: #0a84ff;      /* macOS blue */
+--accent-glow: rgba(0, 255, 159, 0.15);  /* Subtle glow */
+----
+
+==== Light Mode
+
+[source,css]
+----
+--bg-primary: #f5f5f7;
+--bg-secondary: #ffffff;
+--bg-glass: rgba(255, 255, 255, 0.72);
+--text-primary: #1d1d1f;
+--text-secondary: #86868b;
+----
+
+=== 11.3 Typography
+
+Fonts combine Apple's system elegance with monospace character.
+
+[source,css]
+----
+/* Primary - clean and modern */
+--font-system: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 
+               'Segoe UI', Roboto, sans-serif;
+
+/* Nerdy accent - for numbers, codes, and special elements */
+--font-mono: 'SF Mono', 'JetBrains Mono', 'Fira Code', 
+             'Cascadia Code', monospace;
+----
+
+Typography scale:
+
+|===
+|Element |Font |Size |Weight
+
+|Page title |System |28px |600
+|Statement text |System |18px |400
+|Vote counts |Mono |24px |500
+|Labels |Mono |12px |400
+|Buttons |System |15px |500
+|===
+
+=== 11.4 Visual Components
+
+==== Glass Cards
+
+Cards use frosted glass effect (backdrop-filter).
+
+[source,css]
+----
+.glass-card {
+  background: var(--bg-glass);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  box-shadow: 
+    0 4px 6px rgba(0, 0, 0, 0.1),
+    0 1px 3px rgba(0, 0, 0, 0.08);
+}
+----
+
+==== Vote Buttons
+
+Buttons feature a subtle glow effect on hover and selection.
+
+[source,css]
+----
+.vote-button {
+  border-radius: 12px;
+  padding: 12px 20px;
+  font-family: var(--font-system);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.vote-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px var(--accent-glow);
+}
+
+.vote-button.selected {
+  background: var(--accent-primary);
+  box-shadow: 
+    0 0 0 2px var(--accent-primary),
+    0 4px 20px rgba(10, 132, 255, 0.4);
+}
+----
+
+==== Terminal-Style Elements (Nerdy Twist)
+
+Certain UI elements adopt terminal aesthetics:
+
+* Participant count displays like: `> 42 connected_`
+* QR code framed with ASCII border
+* Loading states show blinking cursor: `loading▌`
+* Success messages styled as: `[OK] Vote recorded`
+* Timestamps in ISO format with monospace font
+
+Example terminal badge:
+
+[source,html]
+----
+<div class="terminal-badge">
+  <span class="prompt">$</span>
+  <span class="command">participants</span>
+  <span class="output">→ 42</span>
+  <span class="cursor">▌</span>
+</div>
+----
+
+==== Result Charts
+
+Charts use the syntax-highlighting color palette:
+
+* Horizontal bar charts with rounded ends
+* Animated fill on data update
+* Monospace labels for percentages
+* Subtle grid lines
+
+=== 11.5 Animations & Transitions
+
+All interactions feel smooth and responsive.
+
+[source,css]
+----
+/* Standard easing - Apple-style */
+--ease-out: cubic-bezier(0.4, 0, 0.2, 1);
+--ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+/* Transition durations */
+--duration-fast: 150ms;
+--duration-normal: 250ms;
+--duration-slow: 400ms;
+----
+
+Key animations:
+
+|===
+|Interaction |Animation |Duration
+
+|Vote selection |Scale bounce + glow |250ms
+|Card appear |Fade up + blur in |400ms
+|Results update |Bar width + count tick |600ms
+|Page transition |Fade + slide |300ms
+|QR code reveal |Pixelate in (nerdy) |500ms
+|===
+
+=== 11.6 Participant Interface
 
 Page:
 
@@ -412,23 +642,38 @@ Page:
 /
 ----
 
-UI flow:
+==== Layout
 
-. Load poll definition
-. Render list of statements
-. User selects answer
-. Vote sent to backend
-. Confirmation displayed
+* Full-height gradient background with subtle noise texture
+* Centered content container (max-width: 640px)
+* Poll title at top with monospace accent underline
+* Statement cards stacked vertically
+* Progress indicator (e.g., `3/10 statements`)
+* Floating submit button when all answered
 
-Component structure:
+==== UI Flow
+
+. App loads with subtle fade-in animation
+. Poll title appears with typing effect (nerdy)
+. Statement cards slide in sequentially
+. User taps vote button → button glows, others fade
+. When all statements answered → submit button pulses
+. On submit → success animation with `[OK]` terminal message
+
+==== Component Structure
 
 ----
 PollView
-  StatementCard
-    VoteButtons
+  PollHeader           (title, progress)
+  StatementList
+    StatementCard      (glass card style)
+      StatementText
+      VoteButtons      (4 options with glow)
+  SubmitButton         (floating, pulsing when ready)
+  SuccessOverlay       (terminal-style confirmation)
 ----
 
-=== 11.2 Admin Dashboard
+=== 11.7 Admin Dashboard
 
 Page:
 
@@ -436,23 +681,81 @@ Page:
 /admin
 ----
 
-Features:
+==== Layout
 
-* Join URL display
-* QR code display
-* Participant counter
-* Live vote charts
-* Export results button
+* Dark gradient background
+* Two-column layout on desktop (sidebar + main)
+* Sidebar: connection info, QR code, controls
+* Main: live results grid
+* Responsive: stacks on mobile
 
-Component structure:
+==== Features
+
+* **Connection Panel**
+  - URL displayed in monospace with copy button
+  - QR code with ASCII-style frame
+  - Animated participant counter: `> 42 online_`
+  
+* **Results Grid**
+  - One card per statement
+  - Horizontal bar chart per card
+  - Real-time animated updates
+  - Percentage labels in monospace
+  
+* **Controls**
+  - Export button (CSV download)
+  - Reset button (with confirmation)
+  - Theme toggle (dark/light)
+
+==== Component Structure
 
 ----
 AdminView
-  JoinQRCode
-  ResultsChart
+  ConnectionPanel
+    TerminalURL        (copyable, styled)
+    QRCodeFrame        (ASCII border aesthetic)
+    ParticipantCounter (animated, blinking cursor)
+  ResultsGrid
+    StatementResult    (glass card)
+      StatementText
+      ResultChart      (animated bar chart)
+      VoteBreakdown    (monospace numbers)
+  ControlBar
+    ExportButton
+    ResetButton
+    ThemeToggle
 ----
 
-Charts update when WebSocket messages arrive.
+Charts update instantly when WebSocket messages arrive.
+
+=== 11.8 Responsive Design
+
+Breakpoints follow Apple device conventions:
+
+|===
+|Breakpoint |Target
+
+|< 640px |Mobile (iPhone)
+|640px - 1024px |Tablet (iPad)
+|> 1024px |Desktop (MacBook)
+|===
+
+Mobile-specific adaptations:
+
+* Stack all content vertically
+* Larger touch targets (min 44px)
+* Bottom-aligned submit button
+* Simplified animations (respect reduced-motion)
+
+=== 11.9 Accessibility
+
+The application respects system preferences:
+
+* `prefers-color-scheme`: auto dark/light mode
+* `prefers-reduced-motion`: disable animations
+* Proper focus states with visible outlines
+* ARIA labels on interactive elements
+* Sufficient color contrast ratios (WCAG AA)
 
 == 12. Network Configuration (macOS)
 
@@ -527,22 +830,58 @@ Server may enforce:
 
 == 14. Result Visualization
 
-Charts show vote distribution.
+The result visualization combines clean data presentation with nerdy aesthetics.
 
-Example chart:
+=== 14.1 Chart Design
 
+Horizontal bar charts with rounded caps:
+
+[source]
 ----
-Strongly Agree       ███████
-Agree                █████████████
-Disagree             ███
-Strongly Disagree    █
+┌─────────────────────────────────────────────────────────┐
+│ AI will replace most programming jobs.                  │
+├─────────────────────────────────────────────────────────┤
+│ ██████████████████████████░░░░░░░░░░░░░  42%  strongly  │
+│ ████████████░░░░░░░░░░░░░░░░░░░░░░░░░░░  23%  agree     │
+│ ███████████████████░░░░░░░░░░░░░░░░░░░░  29%  disagree  │
+│ ███░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░   6%  strongly  │
+└─────────────────────────────────────────────────────────┘
+----
+
+Chart features:
+
+* Bars use syntax-highlighting color palette
+* Rounded bar ends (border-radius)
+* Percentage displayed in monospace font
+* Bars animate on value change (width transition)
+* Vote counts tick up/down with counter animation
+
+=== 14.2 Nerdy Data Display
+
+Vote counts shown with terminal styling:
+
+[source]
+----
+$ results --statement=s1
+→ strongly_agree:  17  ████████
+→ agree:           24  ███████████
+→ disagree:         8  ████
+→ strongly_disagree: 3  ██
+→ total: 52 votes
+----
+
+Real-time update indicator:
+
+[source]
+----
+[LIVE] Last update: 2026-03-09T14:23:17Z ●
 ----
 
 Recommended library:
 
-* Chart.js
+* Chart.js with custom styling
 
-Charts update when realtime events arrive.
+Charts update instantly when realtime events arrive.
 
 == 15. Security Considerations
 
@@ -576,13 +915,26 @@ Steps:
 
 Possible enhancements:
 
+Functional:
+
 * Multiple simultaneous polls
 * Timed voting rounds
 * Anonymous vs identified voting
 * Vote locking
 * Word cloud analysis
 * Participant nickname support
-* Presentation mode
+* Presentation mode (full-screen charts)
+
+UI/UX Nerdy Extras:
+
+* ASCII art mode toggle (retro terminal view)
+* Keyboard shortcuts: `j/k` navigation, `1-4` voting
+* Sound effects (mechanical keyboard clicks, optional)
+* Live code snippet themes (Monokai, Dracula, Nord)
+* Matrix rain animation on results reveal
+* Konami code easter egg
+* System stats footer (`uptime: 00:42:17 | mem: 128MB`)
+* Export to Markdown format
 
 == 18. Estimated Development Effort
 
@@ -591,13 +943,25 @@ Approximate time estimate:
 |===
 |Component |Estimated Time
 
-Backend API | 2 hours
-WebSocket realtime layer | 2 hours
-Vue poll interface | 3 hours
-Admin dashboard | 3 hours
-Charts integration | 1 hour
-QR code join | 30 minutes
-Network setup | 30 minutes
+|Backend API |2 hours
+|WebSocket realtime layer |2 hours
+|Design system setup (tokens, base styles) |2 hours
+|Vue poll interface |3 hours
+|Admin dashboard |4 hours
+|Glass card & animation components |2 hours
+|Charts integration |1.5 hours
+|QR code with terminal frame |1 hour
+|Dark/light theme implementation |1 hour
+|Network setup |30 minutes
+|Responsive polish |1 hour
 
-|Total | ~12 hours
+|Total |~20 hours
 |===
+
+The UI implementation requires additional effort due to:
+
+* Custom design system without framework
+* Glass morphism effects with backdrop-filter
+* Animated components with spring physics
+* Terminal-styled "nerdy" elements
+* Full dark/light theme support

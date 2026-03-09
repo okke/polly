@@ -1,0 +1,38 @@
+# Dependencies
+node_modules/
+vendor/bundle/
+
+# Build outputs
+frontend/dist/
+
+# Ruby
+*.gem
+.bundle/
+Gemfile.lock
+
+# Logs
+*.log
+npm-debug.log*
+
+# Runtime data
+pids/
+*.pid
+*.seed
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Environment
+.env
+.env.local
+
+# Vote data (ephemeral)
+server/votes.json

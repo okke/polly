@@ -1,0 +1,26 @@
+{
+  "id": "poll1",
+  "title": "Technology Opinions",
+  "statements": [
+    {
+      "id": "s1",
+      "text": "AI will replace most programming jobs within 10 years."
+    },
+    {
+      "id": "s2",
+      "text": "Remote work is more productive than office work."
+    },
+    {
+      "id": "s3",
+      "text": "Open source will dominate enterprise software."
+    },
+    {
+      "id": "s4",
+      "text": "Vim is superior to all other editors."
+    },
+    {
+      "id": "s5",
+      "text": "Tabs are better than spaces for indentation."
+    }
+  ]
+}
