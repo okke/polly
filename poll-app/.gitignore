@@ -36,3 +36,7 @@ Thumbs.db
 
 # Vote data (ephemeral)
 server/votes.json
+
+# Runtime
+.polly.pid
+server/polly.log
