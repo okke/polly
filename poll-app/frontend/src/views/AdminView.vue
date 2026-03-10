@@ -97,16 +97,34 @@ function openPollGenerator() {
 }
 
 // Handle generated poll acceptance
-function handleAcceptGeneratedPoll(generatedPoll) {
+async function handleAcceptGeneratedPoll(generatedPoll) {
   info('Admin accepted generated poll', { 
     title: generatedPoll.title, 
     statements: generatedPoll.statements.length 
   })
   
-  // Display the generated poll in a nice format
-  const pollPreview = `Generated Poll:\n\nTitle: ${generatedPoll.title}\n\nStatements:\n${generatedPoll.statements.map((s, i) => `${i + 1}. ${s.text}`).join('\n')}`
-  
-  alert(pollPreview + '\n\nTo use this poll, please update the server/poll.json file manually and restart the server.')
+  try {
+    // Update poll on server
+    const response = await axios.put('/api/poll', generatedPoll)
+    
+    if (response.data.status === 'ok') {
+      // Update local state
+      poll.value = generatedPoll
+      
+      // Close modal
+      showGeneratorModal.value = false
+      
+      info('Poll updated successfully')
+      
+      // Show success message
+      alert('Poll updated successfully! All votes have been reset.')
+    } else {
+      throw new Error(response.data.error || 'Failed to update poll')
+    }
+  } catch (e) {
+    info('Failed to update poll', { error: e.message })
+    alert(`Failed to update poll: ${e.response?.data?.details || e.message}`)
+  }
 }
 
 // Reset votes
@@ -129,11 +147,19 @@ async function resetVotes() {
 let unsubscribeResults = null
 let unsubscribeInit = null
 let unsubscribeReset = null
+let unsubscribePollUpdate = null
 
 // Handle reset from server (when another admin resets)
 function handleServerReset(data) {
   // Results update will follow automatically, no action needed
   info('Reset broadcast received from server')
+}
+
+// Handle poll update from server (when poll is updated)
+function handlePollUpdate(data) {
+  info('Poll update received from server', { title: data.poll?.title })
+  poll.value = data.poll
+  // Results will be cleared automatically by server and broadcast
 }
 
 onMounted(async () => {
@@ -148,6 +174,7 @@ onMounted(async () => {
   unsubscribeResults = on('results_update', (data) => handleResultsUpdate(data, 'results_update'))
   unsubscribeInit = on('init', (data) => handleResultsUpdate(data, 'init'))
   unsubscribeReset = on('reset', handleServerReset)
+  unsubscribePollUpdate = on('poll_update', handlePollUpdate)
   
   info('Admin panel mounted')
 })
@@ -156,6 +183,7 @@ onUnmounted(() => {
   if (unsubscribeResults) unsubscribeResults()
   if (unsubscribeInit) unsubscribeInit()
   if (unsubscribeReset) unsubscribeReset()
+  if (unsubscribePollUpdate) unsubscribePollUpdate()
   disconnect()
 })
 </script>

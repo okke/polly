@@ -117,6 +117,29 @@ def broadcast_reset
   end
 end
 
+# Broadcast poll update to all clients (participants and admins)
+def broadcast_poll_update
+  puts "[BROADCAST] Sending poll update to all #{CLIENTS.length} clients"
+  
+  poll = load_poll
+  message = {
+    type: 'poll_update',
+    data: {
+      poll: poll,
+      timestamp: Time.now.utc.iso8601
+    }
+  }.to_json
+  
+  CLIENTS.each do |client, info|
+    begin
+      client.send(message)
+      puts "[BROADCAST] Sent poll update to #{info[:role]} client"
+    rescue => e
+      puts "[WS] Error sending poll update to client: #{e.message}"
+    end
+  end
+end
+
 # WebSocket endpoint
 # Query param: ?role=admin for admin panels
 get '/ws' do
@@ -357,6 +380,80 @@ post '/api/generate-poll' do
     }.to_json
   rescue => e
     puts "[GENERATE POLL] Unexpected error: #{e.message}"
+    puts e.backtrace.first(5).join("\n")
+    
+    halt 500, { 
+      status: 'error', 
+      error: 'Internal server error',
+      details: e.message
+    }.to_json
+  end
+end
+
+# Update poll (admin only)
+put '/api/poll' do
+  content_type :json
+  
+  begin
+    data = JSON.parse(request.body.read)
+    
+    # Validate poll structure
+    unless data['title'] && data['statements']
+      halt 400, { 
+        status: 'error', 
+        error: 'Invalid poll structure',
+        details: 'Poll must have title and statements'
+      }.to_json
+    end
+    
+    unless data['statements'].is_a?(Array) && data['statements'].length > 0
+      halt 400, { 
+        status: 'error', 
+        error: 'Invalid statements',
+        details: 'Poll must have at least one statement'
+      }.to_json
+    end
+    
+    # Validate each statement has required fields
+    data['statements'].each_with_index do |stmt, idx|
+      unless stmt['id'] && stmt['text']
+        halt 400, { 
+          status: 'error', 
+          error: 'Invalid statement',
+          details: "Statement #{idx + 1} must have id and text"
+        }.to_json
+      end
+    end
+    
+    poll_file = File.join(File.dirname(__FILE__), 'poll.json')
+    
+    # Save to file
+    File.write(poll_file, JSON.pretty_generate(data))
+    puts "[UPDATE POLL] Saved new poll: #{data['title']} (#{data['statements'].length} statements)"
+    
+    # Clear all existing votes since they're now invalid
+    VOTES.clear
+    puts "[UPDATE POLL] Cleared all votes"
+    
+    # Broadcast poll update to all clients
+    broadcast_poll_update
+    
+    # Broadcast fresh results (will be empty) to admin clients
+    broadcast_results
+    
+    {
+      status: 'ok',
+      message: 'Poll updated successfully',
+      poll: data
+    }.to_json
+  rescue JSON::ParserError => e
+    halt 400, { 
+      status: 'error', 
+      error: 'Invalid JSON',
+      details: e.message
+    }.to_json
+  rescue => e
+    puts "[UPDATE POLL] Error: #{e.message}"
     puts e.backtrace.first(5).join("\n")
     
     halt 500, { 

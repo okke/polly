@@ -207,6 +207,31 @@ async function handleUserReset() {
 }
 
 let unsubscribeReset = null
+let unsubscribePollUpdate = null
+
+// Handle poll update from server (when poll is updated)
+async function handlePollUpdate(data) {
+  console.log('[Poll] Poll update received from server', data.poll?.title)
+  
+  // Update poll data
+  poll.value = data.poll
+  
+  // Clear votes (they're invalid for the new poll)
+  votes.value = {}
+  localStorage.removeItem('polly-votes')
+  
+  // Reset UI
+  showSuccess.value = false
+  isSubmitting.value = false
+  
+  // Force re-render with clean state
+  await nextTick()
+  renderKey.value++
+  
+  // Show notification
+  error.value = 'Poll has been updated! Please vote on the new statements.'
+  setTimeout(() => { error.value = null }, 5000)
+}
 
 onMounted(() => {
   loadSavedVotes()
@@ -215,10 +240,13 @@ onMounted(() => {
   
   // Listen for reset from server
   unsubscribeReset = on('reset', handleReset)
+  // Listen for poll updates
+  unsubscribePollUpdate = on('poll_update', handlePollUpdate)
 })
 
 onUnmounted(() => {
   if (unsubscribeReset) unsubscribeReset()
+  if (unsubscribePollUpdate) unsubscribePollUpdate()
   disconnect()
 })
 </script>

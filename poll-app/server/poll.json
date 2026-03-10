@@ -1,26 +1,37 @@
 {
-  "id": "poll1",
-  "title": "Technology Opinions",
+  "title": "AI in Software Engineering Opinions",
   "statements": [
     {
-      "id": "s1",
-      "text": "AI will replace most programming jobs within 10 years."
+      "text": "AI tools make coding easier for developers like us.",
+      "id": "s1"
     },
     {
-      "id": "s2",
-      "text": "Remote work is more productive than office work."
+      "text": "I worry that AI will replace traditional coding jobs.",
+      "id": "s2"
     },
     {
-      "id": "s3",
-      "text": "Open source will dominate enterprise software."
+      "text": "Using AI feels like cheating in software development.",
+      "id": "s3"
     },
     {
-      "id": "s4",
-      "text": "Vim is superior to all other editors."
+      "text": "AI can help improve the quality of our code.",
+      "id": "s4"
     },
     {
-      "id": "s5",
-      "text": "Tabs are better than spaces for indentation."
+      "text": "I prefer hand-coding over relying on AI assistance.",
+      "id": "s5"
+    },
+    {
+      "text": "AI could lead to more innovative software solutions.",
+      "id": "s6"
+    },
+    {
+      "text": "I trust AI to debug my code better than I can.",
+      "id": "s7"
+    },
+    {
+      "text": "Embracing AI is crucial for the future of software dev.",
+      "id": "s8"
     }
   ]
 }
