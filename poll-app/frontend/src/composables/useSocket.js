@@ -62,6 +62,7 @@ function createSocket() {
   // Debounce - don't create socket if we tried recently (within 1 second)
   const now = Date.now()
   if (now - lastConnectAttempt < 1000) {
+    console.log('[WS] Debouncing - tried to connect too recently')
     return
   }
   lastConnectAttempt = now
@@ -69,10 +70,13 @@ function createSocket() {
   // If socket exists and is open or connecting, don't create new one
   if (socket.value) {
     const state = socket.value.readyState
+    console.log('[WS] Existing socket state:', state, '(CONNECTING=0, OPEN=1, CLOSING=2, CLOSED=3)')
     if (state === WebSocket.OPEN || state === WebSocket.CONNECTING) {
+      console.log('[WS] Socket already active, skipping creation')
       return
     }
     // Clean up closed socket
+    console.log('[WS] Cleaning up old socket (state:', state, ')')
     try {
       socket.value.onopen = null
       socket.value.onclose = null
@@ -100,21 +104,30 @@ function createSocket() {
     ws.onopen = () => {
       isConnected.value = true
       console.log('[WS] ✓ Connected successfully')
+      console.log('[WS] Connection state:', ws.readyState, '(OPEN=1)')
       remoteLog('WebSocket connected', { url: wsUrl })
     }
     
     ws.onclose = (event) => {
       isConnected.value = false
-      console.log('[WS] ✗ Disconnected', { code: event.code, reason: event.reason })
+      console.log('[WS] ✗ Disconnected', { code: event.code, reason: event.reason, wasClean: event.wasClean })
+      console.log('[WS] Will attempt reconnect in 1 second...')
       remoteLog('WebSocket disconnected')
+      
+      // Clear socket reference since it's now closed
+      if (socket.value === ws) {
+        socket.value = null
+      }
+      
       // Try to reconnect quickly if page is visible
       if (document.visibilityState === 'visible') {
         setTimeout(() => {
-          if (!socket.value || socket.value.readyState === WebSocket.CLOSED) {
-            console.log('[WS] Auto-reconnecting after disconnect...')
-            createSocket()
-          }
-        }, 500)
+          console.log('[WS] Attempting reconnect after disconnect...')
+          console.log('[WS] Current socket state:', socket.value ? socket.value.readyState : 'null')
+          createSocket()
+        }, 1000)
+      } else {
+        console.log('[WS] Page not visible, skipping auto-reconnect')
       }
     }
     
@@ -151,6 +164,7 @@ function createSocket() {
 // Heartbeat - ensures connection is alive, runs every 5 seconds
 function checkConnection() {
   if (document.visibilityState !== 'visible') {
+    console.log('[WS] Heartbeat: page not visible, skipping check')
     return // Don't check when page is hidden
   }
   
@@ -158,17 +172,25 @@ function checkConnection() {
   
   // No socket or socket is closed - reconnect
   if (!ws || ws.readyState === WebSocket.CLOSED) {
-    console.log('[WS] Heartbeat: no active connection, creating socket')
+    console.log('[WS] Heartbeat: no active connection (state:', ws ? ws.readyState : 'null', '), reconnecting...')
     createSocket()
     return
   }
   
   // Socket is closing - wait for it to finish
   if (ws.readyState === WebSocket.CLOSING) {
+    console.log('[WS] Heartbeat: socket closing, waiting...')
     return
   }
   
-  // Socket is connecting or open - all good
+  // Socket is connecting - wait
+  if (ws.readyState === WebSocket.CONNECTING) {
+    console.log('[WS] Heartbeat: socket connecting, waiting...')
+    return
+  }
+  
+  // Socket is open - all good
+  console.log('[WS] Heartbeat: connection healthy')
 }
 
 function startHeartbeat() {
@@ -179,12 +201,37 @@ function startHeartbeat() {
   
   // Then check every 5 seconds (less aggressive)
   heartbeatTimer = setInterval(checkConnection, 5000)
+  
+  // Also reconnect when page becomes visible again
+  const handleVisibilityChange = () => {
+    console.log('[WS] Visibility changed:', document.visibilityState)
+    if (document.visibilityState === 'visible') {
+      console.log('[WS] Page visible, checking connection...')
+      // Give it a moment for the browser to settle
+      setTimeout(() => {
+        checkConnection()
+      }, 500)
+    }
+  }
+  
+  document.addEventListener('visibilitychange', handleVisibilityChange)
+  
+  // Store cleanup function
+  window.__wsVisibilityCleanup = () => {
+    document.removeEventListener('visibilitychange', handleVisibilityChange)
+  }
 }
 
 function stopHeartbeat() {
   if (heartbeatTimer) {
     clearInterval(heartbeatTimer)
     heartbeatTimer = null
+  }
+  
+  // Clean up visibility listener
+  if (window.__wsVisibilityCleanup) {
+    window.__wsVisibilityCleanup()
+    window.__wsVisibilityCleanup = null
   }
 }
 

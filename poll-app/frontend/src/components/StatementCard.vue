@@ -13,6 +13,10 @@ const props = defineProps({
   selectedVote: {
     type: String,
     default: null
+  },
+  disabled: {
+    type: Boolean,
+    default: false
   }
 })
 
@@ -37,6 +41,7 @@ function handleVote(voteValue) {
     
     <VoteButtons 
       :selectedVote="selectedVote"
+      :disabled="disabled"
       @vote="handleVote"
     />
   </article>

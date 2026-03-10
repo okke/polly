@@ -5,6 +5,10 @@ const props = defineProps({
   selectedVote: {
     type: String,
     default: null
+  },
+  disabled: {
+    type: Boolean,
+    default: false
   }
 })
 
@@ -18,7 +22,9 @@ const voteOptions = [
 ]
 
 function handleClick(value) {
-  emit('vote', value)
+  if (!props.disabled) {
+    emit('vote', value)
+  }
 }
 </script>
 
@@ -30,9 +36,10 @@ function handleClick(value) {
       class="vote-button"
       :class="[
         option.value.replace('_', '-'),
-        { selected: selectedVote === option.value, dimmed: selectedVote && selectedVote !== option.value }
+        { selected: selectedVote === option.value, dimmed: selectedVote && selectedVote !== option.value, disabled: disabled }
       ]"
       @click="handleClick(option.value)"
+      :disabled="disabled"
       :aria-pressed="selectedVote === option.value"
     >
       <span class="vote-label">{{ option.label }}</span>
@@ -82,6 +89,14 @@ function handleClick(value) {
 
 .vote-button.dimmed:hover {
   opacity: 0.7;
+}
+
+/* Disabled state */
+.vote-button.disabled,
+.vote-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
 }
 
 /* Selected states with color glow */

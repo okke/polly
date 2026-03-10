@@ -18,6 +18,7 @@ const isSubmitting = ref(false)
 const showSuccess = ref(false)
 const error = ref(null)
 const renderKey = ref(0) // Key to force clean re-render
+const isFinalized = ref(false) // Track if votes are finalized
 
 // Compute progress
 const answeredCount = computed(() => Object.keys(votes.value).length)
@@ -35,17 +36,20 @@ function loadSavedVotes() {
       const currentPollId = poll.value?.id
       
       if (savedPollId && currentPollId && savedPollId === currentPollId) {
-        // Poll IDs match, load the votes
+        // Poll IDs match, load the votes and finalized state
         votes.value = savedData.votes || {}
-        console.log('[Poll] Loaded saved votes for poll:', currentPollId)
+        isFinalized.value = savedData.finalized || false
+        console.log('[Poll] Loaded saved votes for poll:', currentPollId, 'Finalized:', isFinalized.value)
       } else if (savedPollId && currentPollId && savedPollId !== currentPollId) {
         // Different poll, clear storage
         console.log('[Poll] Poll changed, clearing old votes')
         localStorage.removeItem('polly-votes')
         votes.value = {}
+        isFinalized.value = false
       } else if (!savedPollId) {
         // Old format without poll ID, try to load anyway (legacy support)
         votes.value = savedData
+        isFinalized.value = false
         console.log('[Poll] Loaded legacy votes (no poll ID)')
       }
     } catch (e) {
@@ -66,7 +70,8 @@ function saveVotes() {
       const currentPollId = poll.value?.id
       const dataToSave = {
         pollId: currentPollId,
-        votes: votes.value
+        votes: votes.value,
+        finalized: isFinalized.value
       }
       localStorage.setItem('polly-votes', JSON.stringify(dataToSave))
     } catch (e) {
@@ -77,6 +82,8 @@ function saveVotes() {
 
 // Watch for vote changes and save (shallow watch is fine, votes object is replaced)
 watch(votes, saveVotes, { deep: true })
+// Also watch finalized state
+watch(isFinalized, saveVotes)
 
 // Fetch poll data
 async function fetchPoll() {
@@ -104,6 +111,14 @@ async function fetchPoll() {
 
 // Handle vote selection
 async function handleVote(statementId, voteValue) {
+  // Don't allow changes if finalized
+  if (isFinalized.value) {
+    console.log('[Vote] Votes are finalized, change blocked')
+    error.value = 'Your votes are finalized. They can only be changed if the poll is reset.'
+    setTimeout(() => { error.value = null }, 3000)
+    return
+  }
+  
   votes.value[statementId] = voteValue
   
   // Get participant ID (should always be available now)
@@ -135,14 +150,18 @@ async function handleVote(statementId, voteValue) {
   }
 }
 
-// Submit all votes (for confirmation)
-async function submitAllVotes() {
-  if (!allAnswered.value || isSubmitting.value) return
+// Finalize votes (lock them in)
+async function finalizeVotes() {
+  if (!allAnswered.value || isSubmitting.value || isFinalized.value) return
   
   isSubmitting.value = true
   
   try {
-    // Votes are already submitted individually, just show success
+    // Mark as finalized
+    isFinalized.value = true
+    console.log('[Poll] Votes finalized')
+    
+    // Show success
     showSuccess.value = true
     
     // Hide success after 3 seconds
@@ -150,7 +169,8 @@ async function submitAllVotes() {
       showSuccess.value = false
     }, 3000)
   } catch (e) {
-    error.value = 'Failed to submit votes'
+    error.value = 'Failed to finalize votes'
+    isFinalized.value = false
   } finally {
     isSubmitting.value = false
   }
@@ -163,6 +183,7 @@ async function handleReset() {
   try {
     // Clear votes (reactive update)
     votes.value = {}
+    isFinalized.value = false
     
     // Wait for Vue to process
     await nextTick()
@@ -263,8 +284,9 @@ async function handlePollUpdate(data) {
   // Update poll data
   poll.value = data.poll
   
-  // Clear votes (they're invalid for the new poll)
+  // Clear votes and finalized state (they're invalid for the new poll)
   votes.value = {}
+  isFinalized.value = false
   localStorage.removeItem('polly-votes')
   
   // Reset UI
@@ -350,6 +372,15 @@ onUnmounted(() => {
           <span class="text">{{ isConnected ? 'Live' : 'Disconnected' }}</span>
         </div>
         
+        <!-- Finalized indicator -->
+        <div v-if="isFinalized" class="finalized-indicator glass-card">
+          <span class="finalized-icon">🔒</span>
+          <div class="finalized-content">
+            <p class="finalized-title">Votes Finalized</p>
+            <p class="finalized-text">Your votes are locked and cannot be changed unless the poll is reset by the admin.</p>
+          </div>
+        </div>
+        
         <!-- Reset button -->
         <div v-if="answeredCount > 0" class="reset-container">
           <button @click="handleUserReset" class="reset-button">
@@ -365,14 +396,15 @@ onUnmounted(() => {
             :statement="statement"
             :index="index"
             :selectedVote="votes[statement.id]"
+            :disabled="isFinalized"
             @vote="handleVote"
           />
         </div>
         
         <SubmitButton
-          :visible="allAnswered"
+          :visible="allAnswered && !isFinalized"
           :loading="isSubmitting"
-          @submit="submitAllVotes"
+          @submit="finalizeVotes"
         />
       </template>
     </div>
@@ -550,5 +582,39 @@ onUnmounted(() => {
 
 .connection-indicator.connected .text {
   color: var(--accent-success);
+}
+
+/* Finalized indicator */
+.finalized-indicator {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  margin: var(--space-4) auto;
+  max-width: 600px;
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  background: rgba(251, 191, 36, 0.1);
+}
+
+.finalized-icon {
+  font-size: var(--text-2xl);
+  flex-shrink: 0;
+}
+
+.finalized-content {
+  flex: 1;
+}
+
+.finalized-title {
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  color: var(--text-primary);
+  margin-bottom: var(--space-1);
+}
+
+.finalized-text {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  line-height: var(--leading-relaxed);
 }
 </style>

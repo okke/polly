@@ -29,17 +29,17 @@ function handleClick() {
         @click="handleClick"
       >
         <span v-if="!loading" class="button-content">
-          <span class="button-text">Submit Votes</span>
+          <span class="button-text">Finalize Votes</span>
           <span class="button-icon">→</span>
         </span>
         <span v-else class="loading-content">
           <span class="spinner"></span>
-          <span>Submitting...</span>
+          <span>Finalizing...</span>
         </span>
       </button>
       
       <span class="hint terminal-text">
-        press <kbd>Enter</kbd> to submit
+        press <kbd>Enter</kbd> to finalize
       </span>
     </div>
   </Transition>
