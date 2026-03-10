@@ -88,7 +88,7 @@ end
 def broadcast_results
   results = calculate_results
   participant_count = VOTES.keys.length
-  connected_clients = CLIENTS.length
+  connected_clients = CLIENTS.count { |_, info| info[:role] == 'participant' }
   admin_clients = CLIENTS.select { |_, info| info[:role] == 'admin' }
   
   message = {
@@ -177,7 +177,7 @@ get '/ws' do
         data: {
           results: calculate_results,
           participant_count: VOTES.keys.length,
-          connected_clients: CLIENTS.length
+          connected_clients: CLIENTS.count { |_, info| info[:role] == 'participant' }
         }
       }.to_json)
       
@@ -260,7 +260,7 @@ get '/api/info' do
     port: settings.port,
     url: "http://#{local_ip}:#{settings.port}",
     participant_count: VOTES.keys.length,
-    connected_clients: CLIENTS.length
+    connected_clients: CLIENTS.count { |_, info| info[:role] == 'participant' }
   }.to_json
 end
 

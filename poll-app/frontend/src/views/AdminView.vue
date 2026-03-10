@@ -234,6 +234,10 @@ onUnmounted(() => {
             <span>Generate Poll</span>
           </button>
           
+          <div v-if="serverInfo" class="join-url-header">
+            <code class="header-url">{{ serverInfo.url }}</code>
+          </div>
+          
           <div class="connection-status" :class="{ connected: isConnected }">
             <span class="status-dot"></span>
             <span class="status-text">{{ isConnected ? 'live' : 'offline' }}</span>
@@ -465,6 +469,21 @@ onUnmounted(() => {
 
 .connection-status.connected .status-text {
   color: var(--accent-success);
+}
+
+.join-url-header {
+  padding: var(--space-2) var(--space-3);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  backdrop-filter: blur(10px);
+}
+
+.header-url {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--text-primary);
+  font-weight: var(--font-medium);
 }
 
 /* Layout */

@@ -38,7 +38,7 @@ async function copyUrl() {
   <div class="connection-panel glass-card">
     <h2 class="panel-title">
       <span class="title-icon">⬡</span>
-      Connection
+      JOIN
     </h2>
     
     <!-- QR Code -->
@@ -59,18 +59,6 @@ async function copyUrl() {
         />
       </div>
       <span class="qr-label terminal-text">scan to join</span>
-    </div>
-    
-    <!-- URL -->
-    <div class="url-container">
-      <label class="url-label">Join URL</label>
-      <div class="url-box" @click="copyUrl">
-        <code class="url-text">{{ joinUrl }}</code>
-        <button class="copy-btn" :class="{ copied }">
-          <span v-if="!copied">⌘C</span>
-          <span v-else>✓</span>
-        </button>
-      </div>
     </div>
     
     <!-- Connection Counters -->

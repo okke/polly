@@ -214,9 +214,8 @@ defineExpose({ fetchPolls })
   font-size: 0.875rem;
   font-weight: 500;
   margin-bottom: var(--space-1);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.3;
+  word-break: break-word;
 }
 
 .poll-meta {
