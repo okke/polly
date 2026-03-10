@@ -32,38 +32,15 @@ const chartData = computed(() => {
   })
 })
 
-// Animated counts
+// Animated counts - now instant for responsiveness  
 const animatedCounts = ref({})
 
 watch(() => props.votes, (newVotes) => {
-  // Animate count changes
+  // Update counts immediately (no animation for faster feedback)
   voteTypes.forEach(type => {
-    const target = newVotes[type.key] || 0
-    const current = animatedCounts.value[type.key] || 0
-    
-    if (target !== current) {
-      animateCount(type.key, current, target)
-    }
+    animatedCounts.value[type.key] = newVotes[type.key] || 0
   })
 }, { immediate: true, deep: true })
-
-function animateCount(key, from, to) {
-  const duration = 400
-  const steps = 20
-  const stepTime = duration / steps
-  const stepValue = (to - from) / steps
-  
-  let step = 0
-  const interval = setInterval(() => {
-    step++
-    animatedCounts.value[key] = Math.round(from + stepValue * step)
-    
-    if (step >= steps) {
-      animatedCounts.value[key] = to
-      clearInterval(interval)
-    }
-  }, stepTime)
-}
 </script>
 
 <template>
@@ -140,7 +117,7 @@ function animateCount(key, from, to) {
 .bar {
   height: 100%;
   border-radius: var(--radius-md);
-  transition: width var(--duration-slower) var(--ease-out);
+  transition: width 150ms var(--ease-out);
   min-width: 4px;
 }
 

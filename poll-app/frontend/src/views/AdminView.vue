@@ -68,15 +68,28 @@ async function fetchData() {
   }
 }
 
-// Handle realtime updates
-function handleResultsUpdate(data) {
-  console.log('[Admin] Received update at', new Date().toISOString(), data)
+// Handle realtime updates with timing instrumentation
+function handleResultsUpdate(data, source = 'websocket') {
+  const now = performance.now()
+  const serverTime = data.timestamp ? new Date(data.timestamp).getTime() : null
+  const clientTime = Date.now()
+  const latency = serverTime ? clientTime - serverTime : 'N/A'
+  
+  console.log(`[Admin] Update from ${source}:`, {
+    latency: `${latency}ms`,
+    participants: data.participant_count,
+    connections: data.connected_clients,
+    timestamp: data.timestamp
+  })
+  
   results.value = data.results
   participantCount.value = data.participant_count
   if (data.connected_clients !== undefined) {
     connectedClients.value = data.connected_clients
   }
   lastUpdate.value = data.timestamp || new Date().toISOString()
+  
+  console.log(`[Admin] State updated in ${(performance.now() - now).toFixed(1)}ms`)
 }
 
 // Export results
@@ -97,17 +110,21 @@ async function resetVotes() {
   }
 }
 
-let unsubscribe = null
+let unsubscribeResults = null
+let unsubscribeInit = null
 
 onMounted(async () => {
   await fetchData()
   connect('admin')  // Connect as admin to receive broadcasts
-  unsubscribe = on('results_update', handleResultsUpdate)
-  on('init', handleResultsUpdate)
+  
+  // Register handlers (init is sent on WebSocket connect, so it handles reconnect data too)
+  unsubscribeResults = on('results_update', (data) => handleResultsUpdate(data, 'results_update'))
+  unsubscribeInit = on('init', (data) => handleResultsUpdate(data, 'init'))
 })
 
 onUnmounted(() => {
-  if (unsubscribe) unsubscribe()
+  if (unsubscribeResults) unsubscribeResults()
+  if (unsubscribeInit) unsubscribeInit()
   disconnect()
 })
 </script>
