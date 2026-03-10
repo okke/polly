@@ -90,19 +90,22 @@ function createSocket() {
   const wsUrl = `${protocol}//${host}/ws${roleParam}`
   
   console.log('[WS] Creating new connection to:', wsUrl)
+  console.log('[WS] Protocol:', window.location.protocol)
+  console.log('[WS] Host:', window.location.host)
+  console.log('[WS] Current role:', currentRole)
   
   try {
     const ws = new WebSocket(wsUrl)
     
     ws.onopen = () => {
       isConnected.value = true
-      console.log('[WS] Connected')
+      console.log('[WS] ✓ Connected successfully')
       remoteLog('WebSocket connected', { url: wsUrl })
     }
     
-    ws.onclose = () => {
+    ws.onclose = (event) => {
       isConnected.value = false
-      console.log('[WS] Disconnected')
+      console.log('[WS] ✗ Disconnected', { code: event.code, reason: event.reason })
       remoteLog('WebSocket disconnected')
       // Try to reconnect quickly if page is visible
       if (document.visibilityState === 'visible') {
@@ -116,7 +119,9 @@ function createSocket() {
     }
     
     ws.onerror = (error) => {
-      console.error('[WS] Error:', error)
+      console.error('[WS] ✗ Error occurred:', error)
+      console.error('[WS] Error type:', error.type)
+      console.error('[WS] WebSocket state:', ws.readyState)
     }
     
     ws.onmessage = (event) => {

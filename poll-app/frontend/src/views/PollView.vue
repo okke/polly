@@ -9,7 +9,7 @@ import SubmitButton from '../components/SubmitButton.vue'
 import SuccessOverlay from '../components/SuccessOverlay.vue'
 
 const { participantId, resetId } = useParticipant()
-const { connect, disconnect, on } = useSocket()
+const { connect, disconnect, on, isConnected } = useSocket()
 
 const poll = ref(null)
 const votes = ref({})
@@ -29,9 +29,29 @@ function loadSavedVotes() {
   const saved = localStorage.getItem('polly-votes')
   if (saved) {
     try {
-      votes.value = JSON.parse(saved)
+      const savedData = JSON.parse(saved)
+      // Check if this is the new format with poll ID
+      const savedPollId = savedData.pollId
+      const currentPollId = poll.value?.id
+      
+      if (savedPollId && currentPollId && savedPollId === currentPollId) {
+        // Poll IDs match, load the votes
+        votes.value = savedData.votes || {}
+        console.log('[Poll] Loaded saved votes for poll:', currentPollId)
+      } else if (savedPollId && currentPollId && savedPollId !== currentPollId) {
+        // Different poll, clear storage
+        console.log('[Poll] Poll changed, clearing old votes')
+        localStorage.removeItem('polly-votes')
+        votes.value = {}
+      } else if (!savedPollId) {
+        // Old format without poll ID, try to load anyway (legacy support)
+        votes.value = savedData
+        console.log('[Poll] Loaded legacy votes (no poll ID)')
+      }
     } catch (e) {
       // Invalid saved data
+      console.error('[Poll] Failed to parse saved votes:', e)
+      localStorage.removeItem('polly-votes')
     }
   }
 }
@@ -43,7 +63,12 @@ function saveVotes() {
   if (saveTimeout) clearTimeout(saveTimeout)
   saveTimeout = setTimeout(() => {
     try {
-      localStorage.setItem('polly-votes', JSON.stringify(votes.value))
+      const currentPollId = poll.value?.id
+      const dataToSave = {
+        pollId: currentPollId,
+        votes: votes.value
+      }
+      localStorage.setItem('polly-votes', JSON.stringify(dataToSave))
     } catch (e) {
       console.error('Failed to save votes:', e)
     }
@@ -55,12 +80,24 @@ watch(votes, saveVotes, { deep: true })
 
 // Fetch poll data
 async function fetchPoll() {
+  console.log('[Poll] Fetching poll data from /api/poll...')
   try {
     const response = await axios.get('/api/poll')
+    console.log('[Poll] Poll data received:', response.data)
     poll.value = response.data
     isLoading.value = false
+    
+    // Load saved votes AFTER we have the poll data (to check poll ID)
+    loadSavedVotes()
+    console.log('[Poll] Poll loaded successfully:', poll.value?.title)
   } catch (e) {
-    error.value = 'Failed to load poll. Is the server running?'
+    console.error('[Poll] Failed to fetch poll:', e)
+    console.error('[Poll] Error details:', {
+      message: e.message,
+      response: e.response?.data,
+      status: e.response?.status
+    })
+    error.value = `Failed to load poll: ${e.message}. Please check your connection.`
     isLoading.value = false
   }
 }
@@ -72,23 +109,29 @@ async function handleVote(statementId, voteValue) {
   // Get participant ID (should always be available now)
   const pid = participantId.value
   if (!pid) {
-    console.error('No participant ID available')
+    console.error('[Vote] No participant ID available')
+    error.value = 'Error: No participant ID. Please refresh the page.'
     return
   }
   
   try {
-    console.log(`[Vote] ${pid.substring(0,8)}... -> ${statementId}: ${voteValue}`)
+    console.log(`[Vote] Submitting: ${pid.substring(0,8)}... -> ${statementId}: ${voteValue}`)
     const response = await axios.post('/api/vote', {
       participant_id: pid,
       statement_id: statementId,
       vote: voteValue
     })
-    console.log('[Vote] Response:', response.data)
+    console.log('[Vote] Success:', response.data)
   } catch (e) {
-    console.error('Failed to submit vote:', e)
+    console.error('[Vote] Failed to submit:', e)
+    console.error('[Vote] Error details:', {
+      message: e.message,
+      response: e.response?.data,
+      status: e.response?.status
+    })
     // Show error to user
-    error.value = 'Failed to submit vote. Check your connection.'
-    setTimeout(() => { error.value = null }, 3000)
+    error.value = `Failed to submit vote: ${e.message}. Your vote is saved locally.`
+    setTimeout(() => { error.value = null }, 5000)
   }
 }
 
@@ -211,7 +254,11 @@ let unsubscribePollUpdate = null
 
 // Handle poll update from server (when poll is updated)
 async function handlePollUpdate(data) {
-  console.log('[Poll] Poll update received from server', data.poll?.title)
+  console.log('[Poll] Poll update received from server')
+  console.log('[Poll] New poll data:', data)
+  console.log('[Poll] New poll title:', data.poll?.title)
+  console.log('[Poll] New poll ID:', data.poll?.id)
+  console.log('[Poll] Current poll ID before update:', poll.value?.id)
   
   // Update poll data
   poll.value = data.poll
@@ -228,20 +275,39 @@ async function handlePollUpdate(data) {
   await nextTick()
   renderKey.value++
   
+  console.log('[Poll] UI updated with new poll:', poll.value?.title)
+  
   // Show notification
   error.value = 'Poll has been updated! Please vote on the new statements.'
   setTimeout(() => { error.value = null }, 5000)
 }
 
 onMounted(() => {
-  loadSavedVotes()
+  console.log('[Poll] Component mounted, initializing...')
+  console.log('[Poll] User Agent:', navigator.userAgent)
+  console.log('[Poll] Location:', window.location.href)
+  console.log('[Poll] Participant ID:', participantId.value)
+  
+  // Don't load saved votes here - wait until after fetchPoll()
   fetchPoll()
-  connect() // Connect to WebSocket for live tracking
+  
+  console.log('[Poll] Connecting to WebSocket as participant...')
+  try {
+    connect() // Connect to WebSocket for live tracking
+    console.log('[Poll] WebSocket connect() called')
+  } catch (e) {
+    console.error('[Poll] WebSocket connect() failed:', e)
+  }
   
   // Listen for reset from server
+  console.log('[Poll] Registering reset handler...')
   unsubscribeReset = on('reset', handleReset)
+  
   // Listen for poll updates
+  console.log('[Poll] Registering poll_update handler...')
   unsubscribePollUpdate = on('poll_update', handlePollUpdate)
+  
+  console.log('[Poll] Initialization complete')
 })
 
 onUnmounted(() => {
@@ -277,6 +343,12 @@ onUnmounted(() => {
           :answered="answeredCount"
           :total="totalCount"
         />
+        
+        <!-- Connection status indicator (helpful for mobile debugging) -->
+        <div class="connection-indicator" :class="{ connected: isConnected }">
+          <span class="dot"></span>
+          <span class="text">{{ isConnected ? 'Live' : 'Disconnected' }}</span>
+        </div>
         
         <!-- Reset button -->
         <div v-if="answeredCount > 0" class="reset-container">
@@ -435,5 +507,48 @@ onUnmounted(() => {
 
 .reset-button:hover .reset-icon {
   transform: rotate(-180deg);
+}
+
+/* Connection indicator */
+.connection-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  margin: var(--space-3) auto 0;
+  border-radius: var(--radius-full);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-default);
+  font-size: var(--text-xs);
+  font-family: var(--font-mono);
+  max-width: fit-content;
+  transition: all 0.3s ease;
+}
+
+.connection-indicator.connected {
+  border-color: rgba(52, 211, 153, 0.3);
+  background: rgba(52, 211, 153, 0.1);
+}
+
+.connection-indicator .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent-error);
+  transition: background 0.3s ease;
+}
+
+.connection-indicator.connected .dot {
+  background: var(--accent-success);
+  box-shadow: 0 0 8px var(--accent-success);
+}
+
+.connection-indicator .text {
+  color: var(--text-secondary);
+}
+
+.connection-indicator.connected .text {
+  color: var(--accent-success);
 }
 </style>
