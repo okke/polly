@@ -120,36 +120,18 @@ function createSocket() {
     }
     
     ws.onmessage = (event) => {
-      const startTime = performance.now()
       try {
-        const parseStart = performance.now()
         const data = JSON.parse(event.data)
-        const parseTime = performance.now() - parseStart
-        
-        console.log(`[WS] Message received: ${data.type} (parse: ${parseTime.toFixed(2)}ms)`)
-        remoteLog(`Message received: ${data.type}`, { parseTime: `${parseTime.toFixed(2)}ms` })
+        console.log(`[WS] Message received: ${data.type}`)
         
         lastMessage.value = data
         
         // Emit to registered handlers
         const handlers = eventHandlers.get(data.type)
         if (handlers) {
-          const handlerStart = performance.now()
           console.log(`[WS] Calling ${handlers.size} handler(s) for ${data.type}`)
           handlers.forEach(handler => handler(data.data))
-          const handlerTime = performance.now() - handlerStart
-          console.log(`[WS] Handlers completed in ${handlerTime.toFixed(2)}ms`)
-          remoteLog(`Handlers for ${data.type} completed`, { 
-            count: handlers.size,
-            time: `${handlerTime.toFixed(2)}ms`
-          })
-        } else {
-          console.log(`[WS] No handlers registered for ${data.type}`)
         }
-        
-        const totalTime = performance.now() - startTime
-        console.log(`[WS] Total message processing: ${totalTime.toFixed(2)}ms`)
-        remoteLog(`Total processing for ${data.type}`, { time: `${totalTime.toFixed(2)}ms` })
       } catch (e) {
         console.error('[WS] Failed to parse message:', e)
       }
@@ -226,45 +208,22 @@ export function useSocket() {
       eventHandlers.set(eventType, new Set())
     }
     
-    // Wrap handler with timing instrumentation for admin mode
-    const wrappedHandler = (data) => {
-      const start = performance.now()
-      console.log(`[WS] Handler START for ${eventType}`)
-      
-      handler(data)
-      
-      const elapsed = performance.now() - start
-      console.log(`[WS] Handler END for ${eventType} (${elapsed.toFixed(2)}ms)`)
-      remoteLog(`Handler ${eventType} executed`, { time: `${elapsed.toFixed(2)}ms` })
-    }
-    
-    eventHandlers.get(eventType).add(wrappedHandler)
-    console.log('[WS] Registered handler for', eventType, '- total handlers:', eventHandlers.get(eventType).size)
-    remoteLog(`Registered handler for ${eventType}`, { total: eventHandlers.get(eventType).size })
+    eventHandlers.get(eventType).add(handler)
+    console.log('[WS] Registered handler for', eventType)
     
     // Return unsubscribe function
     return () => {
-      eventHandlers.get(eventType).delete(wrappedHandler)
-      remoteLog(`Unregistered handler for ${eventType}`)
+      eventHandlers.get(eventType).delete(handler)
     }
   }
   
   function send(type, data) {
     if (socket.value && socket.value.readyState === WebSocket.OPEN) {
       const message = JSON.stringify({ type, data })
-      const start = performance.now()
-      
       socket.value.send(message)
-      
-      const elapsed = performance.now() - start
-      console.log(`[WS] SEND ${type} (${elapsed.toFixed(2)}ms)`)
-      remoteLog(`Sent message: ${type}`, { 
-        time: `${elapsed.toFixed(2)}ms`,
-        size: message.length 
-      })
+      console.log(`[WS] Sent: ${type}`)
     } else {
       console.warn(`[WS] Cannot send ${type} - socket not open`)
-      remoteLog(`Failed to send ${type} - socket not open`)
     }
   }
   

@@ -50,8 +50,7 @@ const totalVotes = computed(() => {
 
 // Fetch initial data
 async function fetchData() {
-  const start = performance.now()
-  info('>>> Fetching initial data from server')
+  info('Fetching initial data from server')
   
   try {
     const [pollRes, resultsRes, infoRes] = await Promise.all([
@@ -68,45 +67,21 @@ async function fetchData() {
     lastUpdate.value = new Date().toISOString()
     isLoading.value = false
     
-    const elapsed = (performance.now() - start).toFixed(2)
-    info('<<< Initial data loaded', { time: `${elapsed}ms` })
+    info('Initial data loaded')
   } catch (e) {
-    const elapsed = (performance.now() - start).toFixed(2)
-    info(`Failed to load data after ${elapsed}ms`, { error: e.message })
+    info('Failed to load data', { error: e.message })
     error.value = 'Failed to load data. Is the server running?'
     isLoading.value = false
   }
 }
 
-// Handle realtime updates with timing instrumentation
+// Handle realtime updates
 function handleResultsUpdate(data, source = 'websocket') {
-  const handlerStart = performance.now()
-  info(`>>> Handler START: ${source}`)
-  
-  const serverTime = data.timestamp ? new Date(data.timestamp).getTime() : null
-  const clientTime = Date.now()
-  const latency = serverTime ? clientTime - serverTime : 'N/A'
-  
-  info(`Update from ${source}`, {
-    latency: `${latency}ms`,
-    participants: data.participant_count,
-    connections: data.connected_clients,
-    timestamp: data.timestamp
-  })
-  
-  const reactivityStart = performance.now()
   // Batch all reactive updates together to minimize Vue re-render cycles
   results.value = data.results
   participantCount.value = data.participant_count
   connectedClients.value = data.connected_clients !== undefined ? data.connected_clients : connectedClients.value
   lastUpdate.value = data.timestamp || new Date().toISOString()
-  const reactivityTime = (performance.now() - reactivityStart).toFixed(2)
-  
-  const totalTime = (performance.now() - handlerStart).toFixed(2)
-  info(`<<< Handler END: ${source}`, {
-    reactivityTime: `${reactivityTime}ms`,
-    totalTime: `${totalTime}ms`
-  })
 }
 
 // Export results
@@ -120,16 +95,13 @@ async function resetVotes() {
     return
   }
   
-  const start = performance.now()
-  info('>>> Sending reset request to server')
+  info('Sending reset request to server')
   
   try {
     await axios.post('/api/reset')
-    const elapsed = (performance.now() - start).toFixed(2)
-    info('<<< Reset request completed', { time: `${elapsed}ms` })
+    info('Reset request completed')
   } catch (e) {
-    const elapsed = (performance.now() - start).toFixed(2)
-    info(`Reset request failed after ${elapsed}ms`, { error: e.message })
+    info('Reset request failed', { error: e.message })
     alert('Failed to reset votes')
   }
 }
@@ -140,22 +112,16 @@ let unsubscribeReset = null
 
 // Handle reset from server (when another admin resets)
 function handleServerReset(data) {
-  const start = performance.now()
-  info('>>> Handler START: reset broadcast')
-  
   // Results update will follow automatically, no action needed
-  
-  const elapsed = (performance.now() - start).toFixed(2)
-  info('<<< Handler END: reset broadcast', { time: `${elapsed}ms` })
+  info('Reset broadcast received from server')
 }
 
 onMounted(async () => {
-  const mountStart = performance.now()
-  info('=== Admin panel mounting ===')
+  info('Admin panel mounting')
   
   await fetchData()
   
-  info('>>> Connecting WebSocket as admin')
+  info('Connecting WebSocket as admin')
   connect('admin')  // Connect as admin to receive broadcasts
   
   // Register handlers (init is sent on WebSocket connect, so it handles reconnect data too)
@@ -163,8 +129,7 @@ onMounted(async () => {
   unsubscribeInit = on('init', (data) => handleResultsUpdate(data, 'init'))
   unsubscribeReset = on('reset', handleServerReset)
   
-  const mountTime = (performance.now() - mountStart).toFixed(2)
-  info('=== Admin panel mounted ===', { totalTime: `${mountTime}ms` })
+  info('Admin panel mounted')
 })
 
 onUnmounted(() => {

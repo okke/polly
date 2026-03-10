@@ -68,13 +68,10 @@ end
 
 # Broadcast results to admin clients only
 def broadcast_results
-  start_time = Time.now
   results = calculate_results
   participant_count = VOTES.keys.length
   connected_clients = CLIENTS.length
   admin_clients = CLIENTS.select { |_, info| info[:role] == 'admin' }
-  
-  prep_time = ((Time.now - start_time) * 1000).round(2)
   
   message = {
     type: 'results_update',
@@ -86,24 +83,15 @@ def broadcast_results
     }
   }.to_json
   
-  json_time = ((Time.now - start_time) * 1000).round(2)
+  puts "[BROADCAST] Sending to #{admin_clients.length} admin clients (#{connected_clients} total)"
   
-  puts "[BROADCAST] Sending to #{admin_clients.length} admin clients (#{connected_clients} total) | prep: #{prep_time}ms, json: #{json_time}ms"
-  
-  send_start = Time.now
   admin_clients.each do |client, _|
     begin
       client.send(message)
-      send_time = ((Time.now - send_start) * 1000).round(4)
-      puts "[BROADCAST] Sent to admin client (#{send_time}ms)"
-      send_start = Time.now
     rescue => e
       puts "[WS] Error sending to client: #{e.message}"
     end
   end
-  
-  total_time = ((Time.now - start_time) * 1000).round(2)
-  puts "[BROADCAST] Total broadcast time: #{total_time}ms"
 end
 
 # Broadcast reset to all clients (participants and admins)
@@ -136,17 +124,6 @@ get '/ws' do
     # Ping every second to force socket buffer flushes
     # This prevents buffering delays in WebSocket message delivery
     ws = Faye::WebSocket.new(request.env, nil, { ping: 1 })
-    
-    # Try to disable Nagle's algorithm on the underlying socket
-    begin
-      if ws.rack_response && ws.rack_response[2].respond_to?(:io)
-        socket = ws.rack_response[2].io
-        socket.setsockopt(Socket::IPPROTO_TCP, Socket::TCP_NODELAY, 1) if socket.respond_to?(:setsockopt)
-        puts "[WS] TCP_NODELAY enabled on connection"
-      end
-    rescue => e
-      puts "[WS] Could not set TCP_NODELAY: #{e.message}"
-    end
 
     ws.on :open do |event|
       CLIENTS[ws] = { role: role }
