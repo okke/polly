@@ -1,29 +1,25 @@
 {
-  "title": "Learning to Play Volleyball",
+  "title": "AI and the Future of Dev Work",
   "statements": [
     {
-      "text": "Structured skill progressions improve how quickly players learn volleyball fundamentals.",
+      "text": "In 10 years, most devs will review AI output more than write original code.",
       "id": "s1"
     },
     {
-      "text": "Demonstrations help players understand proper volleyball technique more effectively.",
+      "text": "Senior engineers who ignore AI today are making themselves obsolete.",
       "id": "s2"
     },
     {
-      "text": "Regular feedback is essential for players learning new volleyball skills.",
+      "text": "AI will kill off junior dev roles before it replaces senior engineers.",
       "id": "s3"
     },
     {
-      "text": "Game-like drills support the transfer of learned skills into match situations.",
+      "text": "The best engineers soon won't be the best coders, but the best AI wranglers.",
       "id": "s4"
     },
     {
-      "text": "Players learn volleyball concepts better when instruction matches their experience level.",
+      "text": "If AI writes most code, software engineering stops being a true craft.",
       "id": "s5"
-    },
-    {
-      "text": "Consistent practice routines contribute to steady improvement in volleyball performance.",
-      "id": "s6"
     }
   ]
 }

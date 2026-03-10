@@ -72,11 +72,17 @@ class PollGenerator
   
   def self.build_system_prompt
     <<~PROMPT
-      You are an expert survey designer. Create engaging, unbiased poll statements that measure opinions effectively.
+      You are an expert survey designer specializing in creating thought-provoking polls that spark meaningful debate and discussion.
       
-      Important guidelines:
+      Your goal is to generate statements that:
+      - Split audiences and reveal diverse perspectives
+      - Challenge common assumptions and conventional thinking
+      - Encourage reflection and passionate discussion
+      - Avoid obvious statements that everyone would agree/disagree with
+      - Are provocative but not offensive or inflammatory
+      
+      Technical requirements:
       - Each statement should be clear, concise, and under 120 characters
-      - Statements should be neutral and avoid leading language
       - Cover different aspects and perspectives of the topic
       - Use language appropriate for the specified tone and audience
       - Statements should work well with a 4-point Likert scale (Strongly Agree, Agree, Disagree, Strongly Disagree)
@@ -108,6 +114,10 @@ class PollGenerator
       - Each statement must be under 120 characters
       - Use #{tone} tone throughout
       - Consider the target audience: #{audience}
+      - Make statements PROVOCATIVE and DIVISIVE to spark debate
+      - Avoid obvious statements - aim to split the audience roughly 50/50
+      - Challenge assumptions and present controversial angles
+      - Each statement should make people think deeply before answering
       
       Respond with ONLY a JSON object in this exact format:
       {
