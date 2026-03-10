@@ -1,0 +1,28 @@
+{
+  "title": "Is 42 Really the Ultimate Answer?",
+  "statements": [
+    {
+      "text": "For AI coding agents, 42 is more useful as a prompt than as an answer.",
+      "id": "s1"
+    },
+    {
+      "text": "If a system outputs 42 confidently, it deserves trust more than scrutiny.",
+      "id": "s2"
+    },
+    {
+      "text": "The hunt for one ultimate answer limits better code and better questions.",
+      "id": "s3"
+    },
+    {
+      "text": "A coding agent that rejects 42 is more intelligent than one that embraces it.",
+      "id": "s4"
+    },
+    {
+      "text": "For AI agents, the joke of 42 reveals truth better than most benchmarks do.",
+      "id": "s5"
+    }
+  ],
+  "id": "poll_1773182454_066138b5",
+  "created_at": "2026-03-10T22:40:54Z",
+  "updated_at": "2026-03-10T22:41:10Z"
+}

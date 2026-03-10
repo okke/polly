@@ -213,6 +213,14 @@ async function handleReset() {
 
 // Handle user clicking reset button
 async function handleUserReset() {
+  // Don't allow clearing if finalized
+  if (isFinalized.value) {
+    console.log('[Poll] Votes are finalized, clear blocked')
+    error.value = 'Your votes are finalized. They can only be changed if the poll is reset by the admin.'
+    setTimeout(() => { error.value = null }, 3000)
+    return
+  }
+  
   if (!confirm('Are you sure you want to clear all your votes? This cannot be undone.')) {
     return
   }
@@ -383,7 +391,7 @@ onUnmounted(() => {
         
         <!-- Reset button -->
         <div v-if="answeredCount > 0" class="reset-container">
-          <button @click="handleUserReset" class="reset-button">
+          <button @click="handleUserReset" class="reset-button" :disabled="isFinalized" :class="{ disabled: isFinalized }">
             <span class="reset-icon">↺</span>
             Clear my votes
           </button>
@@ -530,6 +538,13 @@ onUnmounted(() => {
 
 .reset-button:active {
   transform: translateY(0);
+}
+
+.reset-button.disabled,
+.reset-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
 }
 
 .reset-icon {
