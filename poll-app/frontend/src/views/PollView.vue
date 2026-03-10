@@ -19,6 +19,7 @@ const showSuccess = ref(false)
 const error = ref(null)
 const renderKey = ref(0) // Key to force clean re-render
 const isFinalized = ref(false) // Track if votes are finalized
+const psychAnalysis = ref(null) // Store psychological analysis
 
 // Compute progress
 const answeredCount = computed(() => Object.keys(votes.value).length)
@@ -159,15 +160,32 @@ async function finalizeVotes() {
   try {
     // Mark as finalized
     isFinalized.value = true
-    console.log('[Poll] Votes finalized')
+    console.log('[Poll] Votes finalized, requesting psychological analysis...')
     
-    // Show success
+    // Request psychological analysis
+    try {
+      const response = await axios.post('/api/analyze', {
+        poll: poll.value,
+        votes: votes.value
+      })
+      
+      if (response.data.status === 'ok') {
+        psychAnalysis.value = response.data.analysis
+        console.log('[Poll] Received psychological analysis')
+      }
+    } catch (analysisError) {
+      console.error('[Poll] Failed to get analysis:', analysisError)
+      // Don't fail the finalization if analysis fails
+      psychAnalysis.value = null
+    }
+    
+    // Show success with analysis
     showSuccess.value = true
     
-    // Hide success after 3 seconds
+    // Hide success after longer time to read analysis
     setTimeout(() => {
       showSuccess.value = false
-    }, 3000)
+    }, 15000) // 15 seconds to read the analysis
   } catch (e) {
     error.value = 'Failed to finalize votes'
     isFinalized.value = false
@@ -184,6 +202,8 @@ async function handleReset() {
     // Clear votes (reactive update)
     votes.value = {}
     isFinalized.value = false
+    psychAnalysis.value = null
+    psychAnalysis.value = null
     
     // Wait for Vue to process
     await nextTick()
@@ -295,6 +315,7 @@ async function handlePollUpdate(data) {
   // Clear votes and finalized state (they're invalid for the new poll)
   votes.value = {}
   isFinalized.value = false
+  psychAnalysis.value = null
   localStorage.removeItem('polly-votes')
   
   // Reset UI
@@ -417,7 +438,7 @@ onUnmounted(() => {
       </template>
     </div>
     
-    <SuccessOverlay :visible="showSuccess" />
+    <SuccessOverlay :visible="showSuccess" :analysis="psychAnalysis" />
   </div>
 </template>
 

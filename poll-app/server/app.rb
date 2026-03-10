@@ -8,6 +8,7 @@ require 'dotenv/load'
 require_relative 'lib/poll_generator'
 require_relative 'lib/model_discovery_service'
 require_relative 'lib/poll_storage'
+require_relative 'lib/psych_analyzer'
 
 # Configuration
 set :bind, '0.0.0.0'
@@ -240,6 +241,43 @@ post '/api/vote' do
   broadcast_results
   
   { status: 'ok', timestamp: Time.now.utc.iso8601 }.to_json
+end
+
+# Generate psychological analysis of user's responses
+post '/api/analyze' do
+  content_type :json
+  
+  begin
+    data = JSON.parse(request.body.read)
+    poll_data = data['poll']
+    votes = data['votes']
+    
+    # Validate input
+    unless poll_data && votes
+      halt 400, { error: 'Missing poll or votes data' }.to_json
+    end
+    
+    puts "[ANALYZE] Generating psychological analysis for #{votes.length} responses"
+    
+    # Create analyzer and generate analysis
+    analyzer = PsychAnalyzer.new
+    analysis = analyzer.analyze(poll_data, votes)
+    
+    {
+      status: 'ok',
+      analysis: analysis,
+      timestamp: Time.now.utc.iso8601
+    }.to_json
+  rescue JSON::ParserError => e
+    halt 400, { error: 'Invalid JSON' }.to_json
+  rescue => e
+    puts "[ANALYZE] Error: #{e.message}"
+    puts "[ANALYZE] Backtrace: #{e.backtrace.first(5).join("\n")}"
+    halt 500, {
+      error: 'Failed to generate analysis',
+      details: e.message
+    }.to_json
+  end
 end
 
 # Get results

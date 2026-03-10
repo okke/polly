@@ -3,26 +3,75 @@ defineProps({
   visible: {
     type: Boolean,
     default: false
+  },
+  analysis: {
+    type: String,
+    default: null
   }
 })
+
+// Function to parse markdown-style bold headers (e.g., **Title**)
+function parseAnalysis(text) {
+  if (!text) return { title: null, body: text }
+  
+  // Look for bold markdown heading at start (e.g., **The Title**)
+  const match = text.match(/^\*\*(.+?)\*\*\n\n(.+)$/s)
+  
+  if (match) {
+    return {
+      title: match[1],
+      body: match[2]
+    }
+  }
+  
+  return { title: null, body: text }
+}
 </script>
 
 <template>
   <Transition name="overlay">
-    <div v-if="visible" class="success-overlay">
-      <div class="success-content glass-card">
-        <div class="success-icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round" class="checkmark" />
-          </svg>
-        </div>
+    <div v-if="visible" class="success-overlay" @click.self="$emit('close')">
+      <div class="success-content glass-card" :class="{ 'has-analysis': analysis }">
+        <!-- Show analysis if available -->
+        <template v-if="analysis">
+          <div class="analysis-header">
+            <div class="analysis-icon">🧠</div>
+            <div class="analysis-title-section">
+              <span class="terminal-prompt">[ ANALYSIS ]</span>
+              <h3 v-if="parseAnalysis(analysis).title" class="analysis-type">
+                {{ parseAnalysis(analysis).title }}
+              </h3>
+            </div>
+          </div>
+          
+          <div class="analysis-body">
+            <p v-for="(paragraph, index) in parseAnalysis(analysis).body.split('\n\n')" 
+               :key="index" 
+               class="analysis-paragraph">
+              {{ paragraph }}
+            </p>
+          </div>
+          
+          <p class="analysis-footer">
+            <span class="disclaimer">🎭 For entertainment purposes only</span>
+          </p>
+        </template>
         
-        <div class="success-text">
-          <span class="terminal-prompt">[ OK ]</span>
-          <span class="terminal-message">votes_recorded</span>
-        </div>
-        
-        <p class="success-subtitle">Thanks for participating!</p>
+        <!-- Default success message if no analysis -->
+        <template v-else>
+          <div class="success-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M5 13l4 4L19 7" stroke-linecap="round" stroke-linejoin="round" class="checkmark" />
+            </svg>
+          </div>
+          
+          <div class="success-text">
+            <span class="terminal-prompt">[ OK ]</span>
+            <span class="terminal-message">votes_recorded</span>
+          </div>
+          
+          <p class="success-subtitle">Thanks for participating!</p>
+        </template>
       </div>
     </div>
   </Transition>
@@ -50,6 +99,15 @@ defineProps({
   padding: var(--space-8);
   text-align: center;
   max-width: 320px;
+}
+
+.success-content.has-analysis {
+  max-width: 600px;
+  text-align: left;
+  align-items: stretch;
+  gap: var(--space-5);
+  max-height: 85vh;
+  overflow-y: auto;
 }
 
 .success-icon {
@@ -127,5 +185,62 @@ defineProps({
 .overlay-leave-to .success-content {
   opacity: 0;
   transform: scale(0.9);
+}
+
+/* Analysis styles */
+.analysis-header {
+  display: flex;
+  gap: var(--space-4);
+  align-items: flex-start;
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--border-default);
+}
+
+.analysis-icon {
+  font-size: 3rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.analysis-title-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.analysis-type {
+  font-size: var(--text-xl);
+  font-weight: var(--font-bold);
+  color: var(--text-primary);
+  margin: 0;
+  line-height: 1.3;
+}
+
+.analysis-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  color: var(--text-secondary);
+  line-height: 1.7;
+}
+
+.analysis-paragraph {
+  margin: 0;
+  font-size: var(--text-base);
+}
+
+.analysis-footer {
+  display: flex;
+  justify-content: center;
+  padding-top: var(--space-3);
+  margin-top: var(--space-3);
+  border-top: 1px solid var(--border-default);
+}
+
+.disclaimer {
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  font-style: italic;
 }
 </style>
