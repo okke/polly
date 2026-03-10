@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import axios from 'axios'
 import { useParticipant } from '../composables/useParticipant.js'
 import { useSocket } from '../composables/useSocket.js'
@@ -17,6 +17,7 @@ const isLoading = ref(true)
 const isSubmitting = ref(false)
 const showSuccess = ref(false)
 const error = ref(null)
+const renderKey = ref(0) // Key to force clean re-render
 
 // Compute progress
 const answeredCount = computed(() => Object.keys(votes.value).length)
@@ -113,24 +114,96 @@ async function submitAllVotes() {
 }
 
 // Handle reset from server
-function handleReset() {
-  const startTime = performance.now()
+async function handleReset() {
   console.log('[Poll] Reset received from server')
   
-  // Clear votes (reactive update)
-  votes.value = {}
+  try {
+    // Clear votes (reactive update)
+    votes.value = {}
+    
+    // Wait for Vue to process
+    await nextTick()
+    
+    // Force clean re-render to prevent animation glitches
+    renderKey.value++
+    
+    // Wait for re-render
+    await nextTick()
+    
+    // Clean up storage
+    try {
+      localStorage.removeItem('polly-votes')
+      resetId()
+    } catch (storageError) {
+      console.error('[Poll] Error cleaning storage:', storageError)
+    }
+    
+    // Hide success message if showing
+    showSuccess.value = false
+    
+    console.log('[Poll] All data cleared')
+  } catch (e) {
+    console.error('[Poll] Error during reset:', e)
+  }
+}
+
+// Handle user clicking reset button
+async function handleUserReset() {
+  if (!confirm('Are you sure you want to clear all your votes? This cannot be undone.')) {
+    return
+  }
   
-  // Defer DOM/storage operations to not block Vue reactivity
-  setTimeout(() => {
-    localStorage.removeItem('polly-votes')
-    resetId()
-  }, 0)
+  // Wait for browser to finish closing the confirm dialog and settle layout
+  await new Promise(resolve => {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(resolve)
+    })
+  })
   
-  // Hide success message if showing
-  showSuccess.value = false
+  const pid = participantId.value
+  if (!pid) {
+    console.error('No participant ID available')
+    return
+  }
   
-  const elapsed = performance.now() - startTime
-  console.log(`[Poll] All data cleared in ${elapsed.toFixed(2)}ms`)
+  try {
+    console.log('[Poll] User requesting vote reset')
+    await axios.post('/api/participant/reset', {
+      participant_id: pid
+    })
+    
+    console.log('[Poll] Server reset successful, clearing local state')
+    
+    // Clear votes first
+    votes.value = {}
+    
+    // Wait for Vue to process the reactive update
+    await nextTick()
+    
+    // Then force re-render
+    renderKey.value++
+    
+    // Wait for re-render to complete
+    await nextTick()
+    
+    // Finally clean up storage
+    try {
+      localStorage.removeItem('polly-votes')
+      resetId()
+    } catch (storageError) {
+      console.error('[Poll] Error cleaning storage:', storageError)
+      // Continue anyway - main reset succeeded
+    }
+    
+    // Hide success message if showing
+    showSuccess.value = false
+    
+    console.log('[Poll] Vote reset successful')
+  } catch (e) {
+    console.error('[Poll] Failed to reset votes:', e)
+    error.value = 'Failed to reset votes. Check your connection.'
+    setTimeout(() => { error.value = null }, 3000)
+  }
 }
 
 let unsubscribeReset = null
@@ -177,7 +250,15 @@ onUnmounted(() => {
           :total="totalCount"
         />
         
-        <div class="statements-list stagger-children">
+        <!-- Reset button -->
+        <div v-if="answeredCount > 0" class="reset-container">
+          <button @click="handleUserReset" class="reset-button">
+            <span class="reset-icon">↺</span>
+            Clear my votes
+          </button>
+        </div>
+        
+        <div :key="renderKey" class="statements-list stagger-children">
           <StatementCard
             v-for="(statement, index) in poll.statements"
             :key="statement.id"
@@ -238,6 +319,8 @@ onUnmounted(() => {
   max-width: var(--container-sm);
   margin: 0 auto;
   padding: 0 var(--space-4);
+  overflow-x: hidden;
+  width: 100%;
 }
 
 .loading-state {
@@ -281,5 +364,48 @@ onUnmounted(() => {
   flex-direction: column;
   gap: var(--space-4);
   margin-top: var(--space-6);
+  overflow-x: hidden;
+  width: 100%;
+}
+
+.reset-container {
+  display: flex;
+  justify-content: center;
+  margin-top: var(--space-4);
+}
+
+.reset-button {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.reset-button:hover {
+  background: var(--bg-tertiary);
+  border-color: var(--border-focus);
+  color: var(--text-primary);
+  transform: translateY(-1px);
+}
+
+.reset-button:active {
+  transform: translateY(0);
+}
+
+.reset-icon {
+  font-size: 1.2em;
+  transition: transform 0.3s ease;
+}
+
+.reset-button:hover .reset-icon {
+  transform: rotate(-180deg);
 }
 </style>

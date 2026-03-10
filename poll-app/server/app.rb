@@ -283,6 +283,32 @@ post '/api/log' do
   end
 end
 
+# Reset participant's own votes
+post '/api/participant/reset' do
+  content_type :json
+  
+  data = JSON.parse(request.body.read)
+  participant_id = data['participant_id']
+  
+  unless participant_id
+    halt 400, { error: 'participant_id required' }.to_json
+  end
+  
+  # Remove this participant's votes
+  if VOTES.delete(participant_id)
+    puts "[PARTICIPANT RESET] #{participant_id[0..7]}... cleared their votes"
+    
+    # Broadcast updated results to admins
+    broadcast_results
+    
+    { status: 'ok', message: 'Your votes have been cleared' }.to_json
+  else
+    # Participant had no votes, but return success anyway
+    puts "[PARTICIPANT RESET] #{participant_id[0..7]}... had no votes to clear"
+    { status: 'ok', message: 'No votes to clear' }.to_json
+  end
+end
+
 # Reset votes (admin only)
 post '/api/reset' do
   content_type :json

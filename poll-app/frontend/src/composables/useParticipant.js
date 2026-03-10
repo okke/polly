@@ -45,8 +45,12 @@ export function useParticipant() {
   }
   
   function resetId() {
-    const id = crypto.randomUUID()
-    localStorage.setItem('polly-participant-id', id)
+    const id = generateUUID()
+    try {
+      localStorage.setItem('polly-participant-id', id)
+    } catch (e) {
+      console.error('Failed to save new participant ID:', e)
+    }
     participantId.value = id
     return id
   }
