@@ -7,6 +7,7 @@ require 'socket'
 require 'dotenv/load'
 require_relative 'lib/poll_generator'
 require_relative 'lib/model_discovery_service'
+require_relative 'lib/poll_storage'
 
 # Configuration
 set :bind, '0.0.0.0'
@@ -34,8 +35,22 @@ VOTES = {}
 
 # Load poll data
 def load_poll
-  poll_file = File.join(File.dirname(__FILE__), 'poll.json')
-  JSON.parse(File.read(poll_file))
+  poll = PollStorage.load_current_poll
+  
+  # Fallback to legacy poll.json if no current poll in storage
+  if poll.nil?
+    poll_file = File.join(File.dirname(__FILE__), 'poll.json')
+    if File.exist?(poll_file)
+      poll = JSON.parse(File.read(poll_file), symbolize_names: true)
+      # Migrate to storage
+      poll_id = PollStorage.save_poll(poll)
+      PollStorage.set_current_poll_id(poll_id)
+      puts "[MIGRATION] Migrated legacy poll.json to storage"
+    end
+  end
+  
+  # Convert symbol keys to string keys for compatibility
+  poll ? JSON.parse(poll.to_json) : nil
 end
 
 # Calculate results
@@ -389,6 +404,12 @@ post '/api/generate-poll' do
     
     if result[:status] == 'ok'
       puts "[GENERATE POLL] Success - Generated poll: #{result[:poll]['title']}"
+      
+      # Save to storage
+      poll_id = PollStorage.save_poll(result[:poll])
+      result[:poll][:id] = poll_id
+      
+      puts "[GENERATE POLL] Saved as #{poll_id}"
     else
       puts "[GENERATE POLL] Failed - #{result[:error]}: #{result[:details]}"
     end
@@ -447,11 +468,12 @@ put '/api/poll' do
       end
     end
     
-    poll_file = File.join(File.dirname(__FILE__), 'poll.json')
+    # Save to storage
+    poll_data = JSON.parse(data.to_json, symbolize_names: true)
+    poll_id = PollStorage.save_poll(poll_data)
+    PollStorage.set_current_poll_id(poll_id)
     
-    # Save to file
-    File.write(poll_file, JSON.pretty_generate(data))
-    puts "[UPDATE POLL] Saved new poll: #{data['title']} (#{data['statements'].length} statements)"
+    puts "[UPDATE POLL] Saved poll: #{data['title']} (#{data['statements'].length} statements) as #{poll_id}"
     
     # Clear all existing votes since they're now invalid
     VOTES.clear
@@ -462,6 +484,8 @@ put '/api/poll' do
     
     # Broadcast fresh results (will be empty) to admin clients
     broadcast_results
+    
+    data['id'] = poll_id
     
     {
       status: 'ok',
@@ -498,6 +522,115 @@ post '/api/reset' do
   broadcast_results
   
   { status: 'ok', message: 'All votes cleared' }.to_json
+end
+
+# List all polls
+get '/api/polls' do
+  content_type :json
+  
+  begin
+    polls = PollStorage.list_polls
+    current_id = PollStorage.current_poll_id
+    
+    {
+      status: 'ok',
+      polls: polls,
+      current_poll_id: current_id
+    }.to_json
+  rescue => e
+    puts "[LIST POLLS] Error: #{e.message}"
+    halt 500, {
+      status: 'error',
+      error: 'Failed to list polls',
+      details: e.message
+    }.to_json
+  end
+end
+
+# Get specific poll by ID
+get '/api/polls/:id' do
+  content_type :json
+  
+  poll_id = params[:id]
+  poll = PollStorage.load_poll(poll_id)
+  
+  if poll
+    {
+      status: 'ok',
+      poll: poll
+    }.to_json
+  else
+    halt 404, {
+      status: 'error',
+      error: 'Poll not found',
+      details: "No poll found with ID: #{poll_id}"
+    }.to_json
+  end
+end
+
+# Activate a poll (set as current)
+post '/api/polls/:id/activate' do
+  content_type :json
+  
+  poll_id = params[:id]
+  poll = PollStorage.load_poll(poll_id)
+  
+  unless poll
+    halt 404, {
+      status: 'error',
+      error: 'Poll not found',
+      details: "No poll found with ID: #{poll_id}"
+    }.to_json
+  end
+  
+  # Set as current poll
+  PollStorage.set_current_poll_id(poll_id)
+  puts "[ACTIVATE POLL] Set #{poll_id} as current poll"
+  
+  # Clear all votes (since we're switching polls)
+  VOTES.clear
+  puts "[ACTIVATE POLL] Cleared all votes"
+  
+  # Broadcast poll update to all clients
+  broadcast_poll_update
+  
+  # Broadcast fresh results to admin clients
+  broadcast_results
+  
+  {
+    status: 'ok',
+    message: 'Poll activated successfully',
+    poll_id: poll_id
+  }.to_json
+end
+
+# Delete a poll
+delete '/api/polls/:id' do
+  content_type :json
+  
+  poll_id = params[:id]
+  
+  if PollStorage.delete_poll(poll_id)
+    puts "[DELETE POLL] Deleted poll: #{poll_id}"
+    
+    # If we deleted the current poll, clear votes and broadcast
+    if PollStorage.current_poll_id.nil?
+      VOTES.clear
+      broadcast_reset
+    end
+    
+    {
+      status: 'ok',
+      message: 'Poll deleted successfully',
+      poll_id: poll_id
+    }.to_json
+  else
+    halt 404, {
+      status: 'error',
+      error: 'Poll not found',
+      details: "No poll found with ID: #{poll_id}"
+    }.to_json
+  end
 end
 
 # Serve frontend (catch-all for SPA routing)

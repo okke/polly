@@ -1,0 +1,28 @@
+{
+  "title": "AI and the Future of Dev Work",
+  "statements": [
+    {
+      "text": "In 10 years, most devs will review AI output more than write original code.",
+      "id": "s1"
+    },
+    {
+      "text": "Senior engineers who ignore AI today are making themselves obsolete.",
+      "id": "s2"
+    },
+    {
+      "text": "AI will kill off junior dev roles before it replaces senior engineers.",
+      "id": "s3"
+    },
+    {
+      "text": "The best engineers soon won't be the best coders, but the best AI wranglers.",
+      "id": "s4"
+    },
+    {
+      "text": "If AI writes most code, software engineering stops being a true craft.",
+      "id": "s5"
+    }
+  ],
+  "id": "poll_1773179454_d4b06193",
+  "created_at": "2026-03-10T21:50:54Z",
+  "updated_at": "2026-03-10T21:50:54Z"
+}

@@ -8,6 +8,7 @@ import ConnectionPanel from '../components/ConnectionPanel.vue'
 import ResultsGrid from '../components/ResultsGrid.vue'
 import ControlBar from '../components/ControlBar.vue'
 import PollGeneratorModal from '../components/PollGeneratorModal.vue'
+import PollSelector from '../components/PollSelector.vue'
 
 const { connect, disconnect, on, isConnected } = useSocket()
 const { isDark, toggleTheme } = useTheme()
@@ -18,6 +19,8 @@ const results = ref({})  // Object with statement results
 const participantCount = ref(0)
 const serverInfo = ref(null)
 const connectedClients = ref(0)
+const currentPollId = ref(null)
+const pollSelectorRef = ref(null)
 const isLoading = ref(true)
 const error = ref(null)
 const lastUpdate = ref(null)
@@ -55,10 +58,11 @@ async function fetchData() {
   info('Fetching initial data from server')
   
   try {
-    const [pollRes, resultsRes, infoRes] = await Promise.all([
+    const [pollRes, resultsRes, infoRes, pollsRes] = await Promise.all([
       axios.get('/api/poll'),
       axios.get('/api/results'),
-      axios.get('/api/info')
+      axios.get('/api/info'),
+      axios.get('/api/polls')
     ])
     
     poll.value = pollRes.data
@@ -66,6 +70,7 @@ async function fetchData() {
     participantCount.value = resultsRes.data.participant_count
     serverInfo.value = infoRes.data
     connectedClients.value = infoRes.data.connected_clients || 0
+    currentPollId.value = pollsRes.data.current_poll_id
     lastUpdate.value = new Date().toISOString()
     isLoading.value = false
     
@@ -110,11 +115,17 @@ async function handleAcceptGeneratedPoll(generatedPoll) {
     if (response.data.status === 'ok') {
       // Update local state
       poll.value = generatedPoll
+      currentPollId.value = generatedPoll.id
       
       // Close modal
       showGeneratorModal.value = false
       
       info('Poll updated successfully')
+      
+      // Refresh poll selector to show new poll
+      if (pollSelectorRef.value) {
+        pollSelectorRef.value.fetchPolls()
+      }
       
       // Show success message
       alert('Poll updated successfully! All votes have been reset.')
@@ -143,7 +154,20 @@ async function resetVotes() {
     alert('Failed to reset votes')
   }
 }
+// Handle poll change (when user selects a different poll)
+async function handlePollChanged(pollId) {
+  info('Poll activated', { poll_id: pollId })
+  currentPollId.value = pollId
+  // Fetch updated data after poll change
+  await fetchData()
+}
 
+// Handle poll deletion
+async function handlePollDeleted(pollId) {
+  info('Poll deleted', { poll_id: pollId })
+  // Fetch updated data after poll deletion
+  await fetchData()
+}
 let unsubscribeResults = null
 let unsubscribeInit = null
 let unsubscribeReset = null
@@ -238,6 +262,13 @@ onUnmounted(() => {
               :serverInfo="serverInfo"
               :participantCount="participantCount"
               :connectedClients="connectedClients"
+            />
+            
+            <PollSelector
+              ref="pollSelectorRef"
+              :currentPollId="currentPollId"
+              @pollChanged="handlePollChanged"
+              @pollDeleted="handlePollDeleted"
             />
             
             <ControlBar 
