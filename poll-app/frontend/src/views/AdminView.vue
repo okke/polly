@@ -7,6 +7,7 @@ import { useRemoteLog } from '../composables/useRemoteLog.js'
 import ConnectionPanel from '../components/ConnectionPanel.vue'
 import ResultsGrid from '../components/ResultsGrid.vue'
 import ControlBar from '../components/ControlBar.vue'
+import PollGeneratorModal from '../components/PollGeneratorModal.vue'
 
 const { connect, disconnect, on, isConnected } = useSocket()
 const { isDark, toggleTheme } = useTheme()
@@ -20,6 +21,7 @@ const connectedClients = ref(0)
 const isLoading = ref(true)
 const error = ref(null)
 const lastUpdate = ref(null)
+const showGeneratorModal = ref(false)
 
 // Computed poll results with statement info
 const pollResults = computed(() => {
@@ -87,6 +89,24 @@ function handleResultsUpdate(data, source = 'websocket') {
 // Export results
 async function exportResults() {
   window.location.href = '/api/export'
+}
+
+// Open poll generator
+function openPollGenerator() {
+  showGeneratorModal.value = true
+}
+
+// Handle generated poll acceptance
+function handleAcceptGeneratedPoll(generatedPoll) {
+  info('Admin accepted generated poll', { 
+    title: generatedPoll.title, 
+    statements: generatedPoll.statements.length 
+  })
+  
+  // Display the generated poll in a nice format
+  const pollPreview = `Generated Poll:\n\nTitle: ${generatedPoll.title}\n\nStatements:\n${generatedPoll.statements.map((s, i) => `${i + 1}. ${s.text}`).join('\n')}`
+  
+  alert(pollPreview + '\n\nTo use this poll, please update the server/poll.json file manually and restart the server.')
 }
 
 // Reset votes
@@ -157,6 +177,11 @@ onUnmounted(() => {
         </div>
         
         <div class="header-right">
+          <button class="generate-btn" @click="openPollGenerator" title="Generate poll with AI">
+            <span class="ai-icon">✨</span>
+            <span>Generate Poll</span>
+          </button>
+          
           <div class="connection-status" :class="{ connected: isConnected }">
             <span class="status-dot"></span>
             <span class="status-text">{{ isConnected ? 'live' : 'offline' }}</span>
@@ -218,6 +243,13 @@ onUnmounted(() => {
         </div>
       </template>
     </div>
+    
+    <!-- Poll Generator Modal -->
+    <PollGeneratorModal 
+      :visible="showGeneratorModal"
+      @close="showGeneratorModal = false"
+      @accept="handleAcceptGeneratedPoll"
+    />
   </div>
 </template>
 
@@ -270,6 +302,56 @@ onUnmounted(() => {
   display: flex;
   align-items: baseline;
   gap: var(--space-4);
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.generate-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(59, 130, 246, 0.1));
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  border-radius: var(--radius-lg);
+  color: var(--text-primary);
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-out);
+  backdrop-filter: blur(10px);
+}
+
+.generate-btn:hover {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(59, 130, 246, 0.2));
+  border-color: rgba(139, 92, 246, 0.5);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.15);
+}
+
+.generate-btn:active {
+  transform: translateY(0);
+}
+
+.ai-icon {
+  font-size: var(--text-base);
+  filter: drop-shadow(0 0 8px rgba(139, 92, 246, 0.5));
+  animation: sparkle 3s ease-in-out infinite;
+}
+
+@keyframes sparkle {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.1);
+  }
 }
 
 .title {

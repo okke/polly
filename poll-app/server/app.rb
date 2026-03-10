@@ -4,6 +4,8 @@ require 'json'
 require 'securerandom'
 require 'faye/websocket'
 require 'socket'
+require 'dotenv/load'
+require_relative 'lib/poll_generator'
 
 # Configuration
 set :bind, '0.0.0.0'
@@ -306,6 +308,62 @@ post '/api/participant/reset' do
     # Participant had no votes, but return success anyway
     puts "[PARTICIPANT RESET] #{participant_id[0..7]}... had no votes to clear"
     { status: 'ok', message: 'No votes to clear' }.to_json
+  end
+end
+
+# Generate poll using AI (admin only)
+post '/api/generate-poll' do
+  content_type :json
+  
+  begin
+    data = JSON.parse(request.body.read)
+    
+    # Validate required fields
+    unless data['topic'] && data['audience']
+      halt 400, { 
+        status: 'error', 
+        error: 'Missing required fields',
+        details: 'Topic and audience are required'
+      }.to_json
+    end
+    
+    # Prepare parameters
+    params = {
+      topic: data['topic'],
+      tone: data['tone'] || 'professional',
+      num_questions: (data['num_questions'] || 5).to_i,
+      audience: data['audience'],
+      additional_context: data['additional_context'],
+      additional_instructions: data['additional_instructions']
+    }
+    
+    puts "[GENERATE POLL] Topic: #{params[:topic]}, Questions: #{params[:num_questions]}, Tone: #{params[:tone]}"
+    
+    # Generate poll using AI
+    result = PollGenerator.generate(params)
+    
+    if result[:status] == 'ok'
+      puts "[GENERATE POLL] Success - Generated poll: #{result[:poll]['title']}"
+    else
+      puts "[GENERATE POLL] Failed - #{result[:error]}: #{result[:details]}"
+    end
+    
+    result.to_json
+  rescue JSON::ParserError => e
+    halt 400, { 
+      status: 'error', 
+      error: 'Invalid JSON',
+      details: e.message
+    }.to_json
+  rescue => e
+    puts "[GENERATE POLL] Unexpected error: #{e.message}"
+    puts e.backtrace.first(5).join("\n")
+    
+    halt 500, { 
+      status: 'error', 
+      error: 'Internal server error',
+      details: e.message
+    }.to_json
   end
 end
 
