@@ -32,15 +32,15 @@ const chartData = computed(() => {
   })
 })
 
-// Animated counts - now instant for responsiveness  
+// Update counts immediately (no animation for faster feedback)
 const animatedCounts = ref({})
 
+// Watch votes - shallow watch since we get a new object each time
 watch(() => props.votes, (newVotes) => {
-  // Update counts immediately (no animation for faster feedback)
   voteTypes.forEach(type => {
     animatedCounts.value[type.key] = newVotes[type.key] || 0
   })
-}, { immediate: true, deep: true })
+}, { immediate: true })
 </script>
 
 <template>

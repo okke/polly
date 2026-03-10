@@ -45,7 +45,7 @@ start: build
 		echo "Server already running (PID: $$(cat $(PID_FILE)))"; \
 	else \
 		echo "Starting server on port $(PORT)..."; \
-		cd server && nohup bundle exec puma config.ru -p $(PORT) --pidfile ../$(PID_FILE) > polly.log 2>&1 & \
+		cd server && nohup bundle exec puma -C puma.rb config.ru --pidfile ../$(PID_FILE) > polly.log 2>&1 & \
 		sleep 2; \
 		if [ -f $(PID_FILE) ]; then \
 			echo "Server started (PID: $$(cat $(PID_FILE)))"; \

@@ -3,15 +3,17 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import axios from 'axios'
 import { useSocket } from '../composables/useSocket.js'
 import { useTheme } from '../composables/useTheme.js'
+import { useRemoteLog } from '../composables/useRemoteLog.js'
 import ConnectionPanel from '../components/ConnectionPanel.vue'
 import ResultsGrid from '../components/ResultsGrid.vue'
 import ControlBar from '../components/ControlBar.vue'
 
 const { connect, disconnect, on, isConnected } = useSocket()
 const { isDark, toggleTheme } = useTheme()
+const { info } = useRemoteLog()
 
 const poll = ref(null)
-const results = ref({})
+const results = ref({})  // Object with statement results
 const participantCount = ref(0)
 const serverInfo = ref(null)
 const connectedClients = ref(0)
@@ -48,6 +50,9 @@ const totalVotes = computed(() => {
 
 // Fetch initial data
 async function fetchData() {
+  const start = performance.now()
+  info('>>> Fetching initial data from server')
+  
   try {
     const [pollRes, resultsRes, infoRes] = await Promise.all([
       axios.get('/api/poll'),
@@ -62,7 +67,12 @@ async function fetchData() {
     connectedClients.value = infoRes.data.connected_clients || 0
     lastUpdate.value = new Date().toISOString()
     isLoading.value = false
+    
+    const elapsed = (performance.now() - start).toFixed(2)
+    info('<<< Initial data loaded', { time: `${elapsed}ms` })
   } catch (e) {
+    const elapsed = (performance.now() - start).toFixed(2)
+    info(`Failed to load data after ${elapsed}ms`, { error: e.message })
     error.value = 'Failed to load data. Is the server running?'
     isLoading.value = false
   }
@@ -70,26 +80,33 @@ async function fetchData() {
 
 // Handle realtime updates with timing instrumentation
 function handleResultsUpdate(data, source = 'websocket') {
-  const now = performance.now()
+  const handlerStart = performance.now()
+  info(`>>> Handler START: ${source}`)
+  
   const serverTime = data.timestamp ? new Date(data.timestamp).getTime() : null
   const clientTime = Date.now()
   const latency = serverTime ? clientTime - serverTime : 'N/A'
   
-  console.log(`[Admin] Update from ${source}:`, {
+  info(`Update from ${source}`, {
     latency: `${latency}ms`,
     participants: data.participant_count,
     connections: data.connected_clients,
     timestamp: data.timestamp
   })
   
+  const reactivityStart = performance.now()
+  // Batch all reactive updates together to minimize Vue re-render cycles
   results.value = data.results
   participantCount.value = data.participant_count
-  if (data.connected_clients !== undefined) {
-    connectedClients.value = data.connected_clients
-  }
+  connectedClients.value = data.connected_clients !== undefined ? data.connected_clients : connectedClients.value
   lastUpdate.value = data.timestamp || new Date().toISOString()
+  const reactivityTime = (performance.now() - reactivityStart).toFixed(2)
   
-  console.log(`[Admin] State updated in ${(performance.now() - now).toFixed(1)}ms`)
+  const totalTime = (performance.now() - handlerStart).toFixed(2)
+  info(`<<< Handler END: ${source}`, {
+    reactivityTime: `${reactivityTime}ms`,
+    totalTime: `${totalTime}ms`
+  })
 }
 
 // Export results
@@ -103,9 +120,16 @@ async function resetVotes() {
     return
   }
   
+  const start = performance.now()
+  info('>>> Sending reset request to server')
+  
   try {
     await axios.post('/api/reset')
+    const elapsed = (performance.now() - start).toFixed(2)
+    info('<<< Reset request completed', { time: `${elapsed}ms` })
   } catch (e) {
+    const elapsed = (performance.now() - start).toFixed(2)
+    info(`Reset request failed after ${elapsed}ms`, { error: e.message })
     alert('Failed to reset votes')
   }
 }
@@ -115,19 +139,32 @@ let unsubscribeInit = null
 let unsubscribeReset = null
 
 // Handle reset from server (when another admin resets)
-function handleServerReset() {
-  console.log('[Admin] Reset broadcast received from server')
+function handleServerReset(data) {
+  const start = performance.now()
+  info('>>> Handler START: reset broadcast')
+  
   // Results update will follow automatically, no action needed
+  
+  const elapsed = (performance.now() - start).toFixed(2)
+  info('<<< Handler END: reset broadcast', { time: `${elapsed}ms` })
 }
 
 onMounted(async () => {
+  const mountStart = performance.now()
+  info('=== Admin panel mounting ===')
+  
   await fetchData()
+  
+  info('>>> Connecting WebSocket as admin')
   connect('admin')  // Connect as admin to receive broadcasts
   
   // Register handlers (init is sent on WebSocket connect, so it handles reconnect data too)
   unsubscribeResults = on('results_update', (data) => handleResultsUpdate(data, 'results_update'))
   unsubscribeInit = on('init', (data) => handleResultsUpdate(data, 'init'))
   unsubscribeReset = on('reset', handleServerReset)
+  
+  const mountTime = (performance.now() - mountStart).toFixed(2)
+  info('=== Admin panel mounted ===', { totalTime: `${mountTime}ms` })
 })
 
 onUnmounted(() => {

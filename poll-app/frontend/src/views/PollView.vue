@@ -35,12 +35,21 @@ function loadSavedVotes() {
   }
 }
 
-// Save votes to localStorage
+// Save votes to localStorage (debounced to avoid blocking on every change)
+let saveTimeout = null
 function saveVotes() {
-  localStorage.setItem('polly-votes', JSON.stringify(votes.value))
+  // Debounce: wait 100ms after last change before saving
+  if (saveTimeout) clearTimeout(saveTimeout)
+  saveTimeout = setTimeout(() => {
+    try {
+      localStorage.setItem('polly-votes', JSON.stringify(votes.value))
+    } catch (e) {
+      console.error('Failed to save votes:', e)
+    }
+  }, 100)
 }
 
-// Watch for vote changes and save
+// Watch for vote changes and save (shallow watch is fine, votes object is replaced)
 watch(votes, saveVotes, { deep: true })
 
 // Fetch poll data
@@ -105,20 +114,26 @@ async function submitAllVotes() {
 
 // Handle reset from server
 function handleReset() {
+  const startTime = performance.now()
   console.log('[Poll] Reset received from server')
   
-  // Clear votes
+  // Clear votes (reactive update)
   votes.value = {}
-  localStorage.removeItem('polly-votes')
   
-  // Reset participant ID
-  resetId()
+  // Defer DOM/storage operations to not block Vue reactivity
+  setTimeout(() => {
+    localStorage.removeItem('polly-votes')
+    resetId()
+  }, 0)
   
   // Hide success message if showing
   showSuccess.value = false
   
-  console.log('[Poll] All data cleared')
+  const elapsed = performance.now() - startTime
+  console.log(`[Poll] All data cleared in ${elapsed.toFixed(2)}ms`)
 }
+
+let unsubscribeReset = null
 
 onMounted(() => {
   loadSavedVotes()
@@ -126,10 +141,11 @@ onMounted(() => {
   connect() // Connect to WebSocket for live tracking
   
   // Listen for reset from server
-  on('reset', handleReset)
+  unsubscribeReset = on('reset', handleReset)
 })
 
 onUnmounted(() => {
+  if (unsubscribeReset) unsubscribeReset()
   disconnect()
 })
 </script>
