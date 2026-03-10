@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 
 const props = defineProps({
   visible: {
@@ -13,6 +13,7 @@ const emit = defineEmits(['close', 'accept'])
 // Form state
 const topic = ref('')
 const tone = ref('professional')
+const model = ref('gpt-4o-mini')
 const numQuestions = ref(5)
 const audience = ref('')
 const additionalContext = ref('')
@@ -23,6 +24,8 @@ const isGenerating = ref(false)
 const isReviewMode = ref(false)
 const generatedPoll = ref(null)
 const error = ref(null)
+const models = ref([])
+const isLoadingModels = ref(true)
 
 const toneOptions = [
   { value: 'professional', label: 'Professional' },
@@ -32,11 +35,50 @@ const toneOptions = [
   { value: 'formal', label: 'Formal' }
 ]
 
+// Fetch available models
+async function fetchModels() {
+  try {
+    const response = await fetch('/api/models')
+    const result = await response.json()
+    
+    if (result.status === 'ok' && result.models) {
+      models.value = result.models
+      
+      // Set default to first model if available
+      if (models.value.length > 0 && !model.value) {
+        model.value = models.value[0].id
+      }
+    }
+  } catch (e) {
+    console.error('Failed to fetch models:', e)
+    // Use fallback models
+    models.value = [
+      { id: 'gpt-5', name: 'GPT-5', pricing_tier: 'premium' },
+      { id: 'gpt-5-mini', name: 'GPT-5-Mini', pricing_tier: 'budget' },
+      { id: 'gpt-4o', name: 'GPT-4o', pricing_tier: 'standard' }
+    ]
+  } finally {
+    isLoadingModels.value = false
+  }
+}
+
+// Format model for display with pricing indicator
+function formatModelLabel(model) {
+  const tierEmoji = {
+    premium: '💎',
+    standard: '⭐',
+    budget: '💚'
+  }
+  const emoji = tierEmoji[model.pricing_tier] || ''
+  return `${emoji} ${model.name}${emoji ? '' : ''}`
+}
+
 // Validation
 const canGenerate = computed(() => {
   return topic.value.trim().length > 0 && 
          audience.value.trim().length > 0 &&
-         !isGenerating.value
+         !isGenerating.value &&
+         model.value
 })
 
 // Generate poll
@@ -55,6 +97,7 @@ async function handleGenerate() {
       body: JSON.stringify({
         topic: topic.value.trim(),
         tone: tone.value,
+        model: model.value,
         num_questions: numQuestions.value,
         audience: audience.value.trim(),
         additional_context: additionalContext.value.trim() || undefined,
@@ -108,6 +151,7 @@ function handleClose() {
 function resetForm() {
   topic.value = ''
   tone.value = 'professional'
+  model.value = models.value.length > 0 ? models.value[0].id : 'gpt-4o-mini'
   numQuestions.value = 5
   audience.value = ''
   additionalContext.value = ''
@@ -123,6 +167,11 @@ function handleBackdropClick(e) {
     handleClose()
   }
 }
+
+// Load models on mount
+onMounted(() => {
+  fetchModels()
+})
 </script>
 
 <template>
@@ -181,6 +230,31 @@ function handleBackdropClick(e) {
                   {{ opt.label }}
                 </option>
               </select>
+            </div>
+            
+            <!-- Model Selection -->
+            <div class="form-field">
+              <label for="model" class="field-label">
+                AI Model <span class="required">*</span>
+              </label>
+              <select 
+                id="model" 
+                v-model="model" 
+                class="field-select"
+                :disabled="isLoadingModels"
+              >
+                <option v-if="isLoadingModels" value="">Loading models...</option>
+                <option 
+                  v-for="m in models" 
+                  :key="m.id" 
+                  :value="m.id"
+                >
+                  {{ formatModelLabel(m) }}
+                </option>
+              </select>
+              <span class="field-hint model-hint">
+                💎 Premium · ⭐ Standard · 💚 Budget
+              </span>
             </div>
             
             <!-- Number of Questions -->
@@ -466,6 +540,13 @@ function handleBackdropClick(e) {
   font-size: var(--text-xs);
   color: var(--text-tertiary);
   text-align: right;
+}
+
+.model-hint {
+  text-align: left;
+  margin-top: var(--space-1);
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
 }
 
 .slider-container {

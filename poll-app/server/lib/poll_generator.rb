@@ -11,6 +11,7 @@ class PollGenerator
     audience = params[:audience]
     additional_context = params[:additional_context]
     additional_instructions = params[:additional_instructions]
+    model = params[:model] || 'gpt-4o-mini'
     
     # Validate required parameters
     raise ArgumentError, 'Topic is required' if topic.nil? || topic.empty?
@@ -29,7 +30,7 @@ class PollGenerator
     )
     
     # Call OpenAI API
-    response = call_openai_api(system_prompt, user_prompt)
+    response = call_openai_api(system_prompt, user_prompt, model)
     
     # Parse and validate response
     poll_data = parse_response(response)
@@ -123,32 +124,71 @@ class PollGenerator
     prompt
   end
   
-  def self.call_openai_api(system_prompt, user_prompt)
+  def self.call_openai_api(system_prompt, user_prompt, model = 'gpt-4o-mini')
     api_key = ENV['OPENAI_API_KEY']
     raise 'OPENAI_API_KEY not configured' if api_key.nil? || api_key.empty? || api_key == 'your_openai_api_key_here'
     
     client = OpenAI::Client.new(access_token: api_key)
     
-    response = client.chat(
-      parameters: {
-        model: 'gpt-4o-mini', # More cost-effective than gpt-4
-        messages: [
-          { role: 'system', content: system_prompt },
-          { role: 'user', content: user_prompt }
-        ],
-        temperature: 0.7,
-        response_format: { type: 'json_object' }
-      }
-    )
+    puts "[POLL GEN] Calling OpenAI with model: #{model}"
     
+    # JSON mode is only supported by certain models
+    # gpt-4-turbo, gpt-4o, gpt-3.5-turbo-1106+, gpt-4-1106-preview+
+    supports_json_mode = model.include?('turbo') || 
+                         model.include?('4o') || 
+                         model.include?('1106') ||
+                         model.include?('gpt-5')
+    
+    parameters = {
+      model: model,
+      messages: [
+        { role: 'system', content: system_prompt },
+        { role: 'user', content: user_prompt }
+      ],
+      temperature: 0.7
+    }
+    
+    # Only add response_format for models that support it
+    if supports_json_mode
+      parameters[:response_format] = { type: 'json_object' }
+      puts "[POLL GEN] Using JSON mode"
+    else
+      puts "[POLL GEN] JSON mode not supported for #{model}, using regular mode"
+    end
+    
+    response = client.chat(parameters: parameters)
+    
+    puts "[POLL GEN] Response received: #{response.class}"
     response
   end
   
   def self.parse_response(response)
-    content = response.dig('choices', 0, 'message', 'content')
-    raise 'No content in API response' if content.nil? || content.empty?
+    # Debug logging
+    puts "[POLL GEN] Response keys: #{response.keys.inspect}"
+    puts "[POLL GEN] Response: #{response.inspect[0..500]}"
     
-    poll_data = JSON.parse(content)
+    content = response.dig('choices', 0, 'message', 'content')
+    
+    if content.nil? || content.empty?
+      # Check if there's an error in the response
+      if response['error']
+        raise "OpenAI API Error: #{response['error']['message']}"
+      end
+      
+      puts "[POLL GEN] ERROR - Response structure: #{response.inspect}"
+      raise 'No content in API response'
+    end
+    
+    puts "[POLL GEN] Content received (first 200 chars): #{content[0..200]}"
+    
+    # Strip markdown code blocks if present (for models without JSON mode)
+    cleaned_content = content.strip
+    if cleaned_content.start_with?('```json') || cleaned_content.start_with?('```')
+      cleaned_content = cleaned_content.gsub(/^```json?\n?/, '').gsub(/\n?```$/, '').strip
+      puts "[POLL GEN] Stripped markdown code blocks"
+    end
+    
+    poll_data = JSON.parse(cleaned_content)
     
     # Validate structure
     raise 'Missing title in response' unless poll_data['title']

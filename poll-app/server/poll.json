@@ -1,37 +1,17 @@
 {
-  "title": "AI in Software Engineering Opinions",
+  "title": "Soup Tasting Evaluation Standards",
   "statements": [
     {
-      "text": "AI tools make coding easier for developers like us.",
+      "text": "A soup meets top fine-dining standards when aroma, balance, and finish are assessed in tasting.",
       "id": "s1"
     },
     {
-      "text": "I worry that AI will replace traditional coding jobs.",
+      "text": "Texture, clarity, and temperature are essential indicators of a soup's readiness for elite service.",
       "id": "s2"
     },
     {
-      "text": "Using AI feels like cheating in software development.",
+      "text": "Ingredient expression, seasoning precision, and consistency best show whether a soup is exceptional.",
       "id": "s3"
-    },
-    {
-      "text": "AI can help improve the quality of our code.",
-      "id": "s4"
-    },
-    {
-      "text": "I prefer hand-coding over relying on AI assistance.",
-      "id": "s5"
-    },
-    {
-      "text": "AI could lead to more innovative software solutions.",
-      "id": "s6"
-    },
-    {
-      "text": "I trust AI to debug my code better than I can.",
-      "id": "s7"
-    },
-    {
-      "text": "Embracing AI is crucial for the future of software dev.",
-      "id": "s8"
     }
   ]
 }

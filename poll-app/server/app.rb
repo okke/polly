@@ -6,6 +6,7 @@ require 'faye/websocket'
 require 'socket'
 require 'dotenv/load'
 require_relative 'lib/poll_generator'
+require_relative 'lib/model_discovery_service'
 
 # Configuration
 set :bind, '0.0.0.0'
@@ -248,6 +249,26 @@ get '/api/info' do
   }.to_json
 end
 
+# Get available OpenAI models
+get '/api/models' do
+  content_type :json
+  
+  begin
+    models = ModelDiscoveryService.list
+    {
+      status: 'ok',
+      models: models
+    }.to_json
+  rescue => e
+    puts "[MODELS] Error: #{e.message}"
+    halt 500, {
+      status: 'error',
+      error: 'Failed to fetch models',
+      details: e.message
+    }.to_json
+  end
+end
+
 # Export results as CSV
 get '/api/export' do
   content_type 'text/csv'
@@ -357,10 +378,11 @@ post '/api/generate-poll' do
       num_questions: (data['num_questions'] || 5).to_i,
       audience: data['audience'],
       additional_context: data['additional_context'],
-      additional_instructions: data['additional_instructions']
+      additional_instructions: data['additional_instructions'],
+      model: data['model'] || 'gpt-4o-mini'
     }
     
-    puts "[GENERATE POLL] Topic: #{params[:topic]}, Questions: #{params[:num_questions]}, Tone: #{params[:tone]}"
+    puts "[GENERATE POLL] Topic: #{params[:topic]}, Questions: #{params[:num_questions]}, Model: #{params[:model]}"
     
     # Generate poll using AI
     result = PollGenerator.generate(params)
