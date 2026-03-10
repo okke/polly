@@ -1,17 +1,29 @@
 {
-  "title": "Soup Tasting Evaluation Standards",
+  "title": "Learning to Play Volleyball",
   "statements": [
     {
-      "text": "A soup meets top fine-dining standards when aroma, balance, and finish are assessed in tasting.",
+      "text": "Structured skill progressions improve how quickly players learn volleyball fundamentals.",
       "id": "s1"
     },
     {
-      "text": "Texture, clarity, and temperature are essential indicators of a soup's readiness for elite service.",
+      "text": "Demonstrations help players understand proper volleyball technique more effectively.",
       "id": "s2"
     },
     {
-      "text": "Ingredient expression, seasoning precision, and consistency best show whether a soup is exceptional.",
+      "text": "Regular feedback is essential for players learning new volleyball skills.",
       "id": "s3"
+    },
+    {
+      "text": "Game-like drills support the transfer of learned skills into match situations.",
+      "id": "s4"
+    },
+    {
+      "text": "Players learn volleyball concepts better when instruction matches their experience level.",
+      "id": "s5"
+    },
+    {
+      "text": "Consistent practice routines contribute to steady improvement in volleyball performance.",
+      "id": "s6"
     }
   ]
 }

@@ -145,7 +145,7 @@ class PollGenerator
         { role: 'system', content: system_prompt },
         { role: 'user', content: user_prompt }
       ],
-      temperature: 0.7
+      temperature: 1.0
     }
     
     # Only add response_format for models that support it
