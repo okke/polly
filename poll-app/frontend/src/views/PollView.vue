@@ -8,8 +8,8 @@ import StatementCard from '../components/StatementCard.vue'
 import SubmitButton from '../components/SubmitButton.vue'
 import SuccessOverlay from '../components/SuccessOverlay.vue'
 
-const { participantId } = useParticipant()
-const { connect, disconnect } = useSocket()
+const { participantId, resetId } = useParticipant()
+const { connect, disconnect, on } = useSocket()
 
 const poll = ref(null)
 const votes = ref({})
@@ -103,10 +103,30 @@ async function submitAllVotes() {
   }
 }
 
+// Handle reset from server
+function handleReset() {
+  console.log('[Poll] Reset received from server')
+  
+  // Clear votes
+  votes.value = {}
+  localStorage.removeItem('polly-votes')
+  
+  // Reset participant ID
+  resetId()
+  
+  // Hide success message if showing
+  showSuccess.value = false
+  
+  console.log('[Poll] All data cleared')
+}
+
 onMounted(() => {
   loadSavedVotes()
   fetchPoll()
   connect() // Connect to WebSocket for live tracking
+  
+  // Listen for reset from server
+  on('reset', handleReset)
 })
 
 onUnmounted(() => {

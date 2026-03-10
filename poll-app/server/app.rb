@@ -95,6 +95,27 @@ def broadcast_results
   end
 end
 
+# Broadcast reset to all clients (participants and admins)
+def broadcast_reset
+  puts "[BROADCAST] Sending reset to all #{CLIENTS.length} clients"
+  
+  message = {
+    type: 'reset',
+    data: {
+      timestamp: Time.now.utc.iso8601
+    }
+  }.to_json
+  
+  CLIENTS.each do |client, info|
+    begin
+      client.send(message)
+      puts "[BROADCAST] Sent reset to #{info[:role]} client"
+    rescue => e
+      puts "[WS] Error sending reset to client: #{e.message}"
+    end
+  end
+end
+
 # WebSocket endpoint
 # Query param: ?role=admin for admin panels
 get '/ws' do
@@ -226,7 +247,13 @@ end
 post '/api/reset' do
   content_type :json
   VOTES.clear
+  
+  # First send reset to all clients
+  broadcast_reset
+  
+  # Then update admin dashboards with fresh results
   broadcast_results
+  
   { status: 'ok', message: 'All votes cleared' }.to_json
 end
 

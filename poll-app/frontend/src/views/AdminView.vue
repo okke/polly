@@ -112,6 +112,13 @@ async function resetVotes() {
 
 let unsubscribeResults = null
 let unsubscribeInit = null
+let unsubscribeReset = null
+
+// Handle reset from server (when another admin resets)
+function handleServerReset() {
+  console.log('[Admin] Reset broadcast received from server')
+  // Results update will follow automatically, no action needed
+}
 
 onMounted(async () => {
   await fetchData()
@@ -120,11 +127,13 @@ onMounted(async () => {
   // Register handlers (init is sent on WebSocket connect, so it handles reconnect data too)
   unsubscribeResults = on('results_update', (data) => handleResultsUpdate(data, 'results_update'))
   unsubscribeInit = on('init', (data) => handleResultsUpdate(data, 'init'))
+  unsubscribeReset = on('reset', handleServerReset)
 })
 
 onUnmounted(() => {
   if (unsubscribeResults) unsubscribeResults()
   if (unsubscribeInit) unsubscribeInit()
+  if (unsubscribeReset) unsubscribeReset()
   disconnect()
 })
 </script>
