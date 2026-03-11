@@ -2,6 +2,7 @@
 import { ref, onMounted } from 'vue'
 import axios from 'axios'
 import { useRemoteLog } from '../composables/useRemoteLog.js'
+import DeleteConfirmModal from './DeleteConfirmModal.vue'
 
 const { info } = useRemoteLog()
 
@@ -13,7 +14,8 @@ const emit = defineEmits(['pollChanged', 'pollDeleted'])
 
 const polls = ref([])
 const isLoading = ref(true)
-const showDeleteConfirm = ref(null) // Poll ID to delete
+const pollToDelete = ref(null) // Poll object to delete
+const isDeleting = ref(false)
 
 // Fetch all polls
 async function fetchPolls() {
@@ -46,25 +48,36 @@ async function activatePoll(pollId) {
   }
 }
 
-// Delete a poll
-async function deletePoll(pollId) {
+// Show delete confirmation modal
+function showDeleteModal(poll) {
+  pollToDelete.value = poll
+}
+
+// Confirm delete
+async function confirmDelete() {
+  if (!pollToDelete.value) return
+  
+  isDeleting.value = true
+  
   try {
-    info('Deleting poll', { poll_id: pollId })
-    await axios.delete(`/api/polls/${pollId}`)
+    info('Deleting poll', { poll_id: pollToDelete.value.id })
+    await axios.delete(`/api/polls/${pollToDelete.value.id}`)
     info('Poll deleted successfully')
-    showDeleteConfirm.value = null
-    emit('pollDeleted', pollId)
+    emit('pollDeleted', pollToDelete.value.id)
+    pollToDelete.value = null
     await fetchPolls() // Refresh the list
   } catch (error) {
     console.error('Failed to delete poll:', error)
     info('Failed to delete poll', { error: error.message })
     alert('Failed to delete poll: ' + error.message)
+  } finally {
+    isDeleting.value = false
   }
 }
 
 // Cancel delete
 function cancelDelete() {
-  showDeleteConfirm.value = null
+  pollToDelete.value = null
 }
 
 // Format date nicely
@@ -122,32 +135,26 @@ defineExpose({ fetchPolls })
           </div>
         </div>
         
-        <div v-if="showDeleteConfirm === poll.id" class="delete-actions">
-          <button
-            class="delete-btn cancel"
-            title="Cancel"
-            @click.stop="cancelDelete"
-          >
-            <span>✕</span>
-          </button>
-          <button
-            class="delete-btn confirm"
-            title="Click to confirm delete"
-            @click.stop="deletePoll(poll.id)"
-          >
-            <span>Delete?</span>
-          </button>
-        </div>
         <button
-          v-else
           class="delete-btn"
           title="Delete poll"
-          @click.stop="showDeleteConfirm = poll.id"
+          @click.stop="showDeleteModal(poll)"
         >
           <span>×</span>
         </button>
       </div>
     </div>
+    
+    <!-- Delete Confirmation Modal (teleported to body) -->
+    <Teleport to="body">
+      <DeleteConfirmModal
+        :visible="pollToDelete !== null"
+        :pollTitle="pollToDelete?.title || ''"
+        :isDeleting="isDeleting"
+        @confirm="confirmDelete"
+        @cancel="cancelDelete"
+      />
+    </Teleport>
   </div>
 </template>
 
@@ -262,12 +269,6 @@ defineExpose({ fetchPolls })
   font-weight: 600;
 }
 
-.delete-actions {
-  display: flex;
-  align-items: stretch;
-  border-left: 1px solid var(--border-color);
-}
-
 .delete-btn {
   display: flex;
   align-items: center;
@@ -275,6 +276,8 @@ defineExpose({ fetchPolls })
   width: 32px;
   background: transparent;
   border: none;
+  border-left: 1px solid var(--border-color);
+  border-radius: 0 6px 6px 0;
   color: var(--text-secondary);
   cursor: pointer;
   font-size: 1.25rem;
@@ -282,44 +285,9 @@ defineExpose({ fetchPolls })
   flex-shrink: 0;
 }
 
-/* When delete-btn is standalone (not in delete-actions) */
-.poll-item > .delete-btn {
-  border-left: 1px solid var(--border-color);
-  border-radius: 0 6px 6px 0;
-}
-
 .delete-btn:hover {
-  background: rgba(255, 59, 48, 0.1);
-  color: #ff3b30;
-}
-
-.delete-btn.cancel {
-  background: transparent;
-  color: var(--text-secondary);
-  font-size: 1rem;
-}
-
-.delete-btn.cancel:hover {
-  background: var(--bg-tertiary);
-  color: var(--text-primary);
-}
-
-.delete-btn.confirm {
-  width: auto;
-  min-width: 60px;
-  padding: 0 var(--space-3);
-  background: rgba(255, 59, 48, 0.2);
-  color: #ff3b30;
-  font-size: 0.75rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
-  border-radius: 0 6px 6px 0;
-}
-
-.delete-btn.confirm:hover {
-  background: rgba(255, 59, 48, 0.4);
-  transform: scale(1.02);
+  background: rgba(239, 68, 68, 0.1);
+  color: rgb(239, 68, 68);
 }
 
 /* Scrollbar styling */
