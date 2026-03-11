@@ -1,0 +1,55 @@
+{
+  "title": "CS Education in the Era of Vibe Coding",
+  "statements": [
+    {
+      "text": "Prompt design merits equal curricular weight as algorithm design in modern CS programs.",
+      "id": "s1"
+    },
+    {
+      "text": "Requiring students to code unaided is becoming as outdated as handwritten numerical analysis.",
+      "id": "s2"
+    },
+    {
+      "text": "Vibe coding weakens abstraction skills by rewarding outputs over mechanistic understanding.",
+      "id": "s3"
+    },
+    {
+      "text": "Introductory CS should teach model critique before teaching syntax.",
+      "id": "s4"
+    },
+    {
+      "text": "Graduates who cannot build without AI assistance are still professionally competent engineers.",
+      "id": "s5"
+    },
+    {
+      "text": "Assessment should prioritize system specification and verification over code authorship.",
+      "id": "s6"
+    },
+    {
+      "text": "Mandating manual debugging in coursework misrepresents contemporary software practice.",
+      "id": "s7"
+    },
+    {
+      "text": "AI-assisted development makes deep knowledge of data structures less educationally central.",
+      "id": "s8"
+    },
+    {
+      "text": "Banning generative AI in CS classrooms now undermines academic integrity rather than protecting it.",
+      "id": "s9"
+    },
+    {
+      "text": "The core aim of CS education should shift from programming mastery to computational judgment.",
+      "id": "s10"
+    }
+  ],
+  "context": {
+    "topic": "Computer Science education in the age of vibe coding.",
+    "tone": "academic",
+    "audience": "Computer Science Engineers",
+    "additional_context": "The poll is part of a Computer Science Seminar talk.",
+    "additional_instructions": "Look from all different angles, both optimistic and pessimistic."
+  },
+  "id": "poll_1773253170_4ffc862d",
+  "created_at": "2026-03-11T18:19:30Z",
+  "updated_at": "2026-03-11T18:20:14Z"
+}

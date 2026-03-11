@@ -26,6 +26,8 @@ const generatedPoll = ref(null)
 const error = ref(null)
 const models = ref([])
 const isLoadingModels = ref(true)
+const showToneDropdown = ref(false)
+const showModelDropdown = ref(false)
 
 const toneOptions = [
   { value: 'professional', label: 'Professional' },
@@ -136,6 +138,27 @@ function handleAccept() {
   }
 }
 
+// Custom dropdown helpers
+function selectTone(value) {
+  tone.value = value
+  showToneDropdown.value = false
+}
+
+function selectModel(id) {
+  model.value = id
+  showModelDropdown.value = false
+}
+
+function getToneLabel() {
+  const option = toneOptions.find(opt => opt.value === tone.value)
+  return option ? option.label : 'Select tone'
+}
+
+function getModelLabel() {
+  const m = models.value.find(m => m.id === model.value)
+  return m ? formatModelLabel(m) : 'Select model'
+}
+
 // Close modal
 function handleClose() {
   if (!isGenerating.value) {
@@ -225,11 +248,32 @@ onMounted(() => {
               <label for="tone" class="field-label">
                 Tone of Voice <span class="required">*</span>
               </label>
-              <select id="tone" v-model="tone" class="field-select">
-                <option v-for="opt in toneOptions" :key="opt.value" :value="opt.value">
-                  {{ opt.label }}
-                </option>
-              </select>
+              <div class="custom-select-wrapper">
+                <button 
+                  type="button"
+                  class="custom-select"
+                  @click="showToneDropdown = !showToneDropdown"
+                  @blur="setTimeout(() => showToneDropdown = false, 150)"
+                >
+                  <span class="select-value">{{ getToneLabel() }}</span>
+                  <span class="select-arrow">▼</span>
+                </button>
+                <Transition name="dropdown">
+                  <div v-if="showToneDropdown" class="custom-dropdown">
+                    <button
+                      v-for="opt in toneOptions"
+                      :key="opt.value"
+                      type="button"
+                      class="dropdown-option"
+                      :class="{ active: tone === opt.value }"
+                      @click="selectTone(opt.value)"
+                    >
+                      <span class="option-label">{{ opt.label }}</span>
+                      <span v-if="tone === opt.value" class="option-check">✓</span>
+                    </button>
+                  </div>
+                </Transition>
+              </div>
             </div>
             
             <!-- Model Selection -->
@@ -237,21 +281,35 @@ onMounted(() => {
               <label for="model" class="field-label">
                 AI Model <span class="required">*</span>
               </label>
-              <select 
-                id="model" 
-                v-model="model" 
-                class="field-select"
-                :disabled="isLoadingModels"
-              >
-                <option v-if="isLoadingModels" value="">Loading models...</option>
-                <option 
-                  v-for="m in models" 
-                  :key="m.id" 
-                  :value="m.id"
+              <div class="custom-select-wrapper">
+                <button 
+                  type="button"
+                  class="custom-select"
+                  :disabled="isLoadingModels"
+                  @click="showModelDropdown = !showModelDropdown"
+                  @blur="setTimeout(() => showModelDropdown = false, 150)"
                 >
-                  {{ formatModelLabel(m) }}
-                </option>
-              </select>
+                  <span class="select-value">
+                    {{ isLoadingModels ? 'Loading models...' : getModelLabel() }}
+                  </span>
+                  <span class="select-arrow">▼</span>
+                </button>
+                <Transition name="dropdown">
+                  <div v-if="showModelDropdown && !isLoadingModels" class="custom-dropdown">
+                    <button
+                      v-for="m in models"
+                      :key="m.id"
+                      type="button"
+                      class="dropdown-option"
+                      :class="{ active: model === m.id }"
+                      @click="selectModel(m.id)"
+                    >
+                      <span class="option-label">{{ formatModelLabel(m) }}</span>
+                      <span v-if="model === m.id" class="option-check">✓</span>
+                    </button>
+                  </div>
+                </Transition>
+              </div>
               <span class="field-hint model-hint">
                 💎 Premium · ⭐ Standard · 💚 Budget
               </span>
@@ -511,7 +569,6 @@ onMounted(() => {
 }
 
 .field-input,
-.field-select,
 .field-textarea {
   width: 100%;
   padding: var(--space-3);
@@ -525,10 +582,130 @@ onMounted(() => {
 }
 
 .field-input:focus,
-.field-select:focus,
 .field-textarea:focus {
   outline: none;
   border-color: var(--accent-primary);
+}
+
+/* Custom Select Styles */
+.custom-select-wrapper {
+  position: relative;
+}
+
+.custom-select {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-size: var(--text-base);
+  font-family: var(--font-system);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+}
+
+.custom-select:hover:not(:disabled) {
+  border-color: var(--accent-primary);
+  background: var(--bg-tertiary);
+}
+
+.custom-select:focus {
+  outline: none;
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1);
+}
+
+.custom-select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.select-value {
+  flex: 1;
+}
+
+.select-arrow {
+  font-size: 0.7rem;
+  color: var(--text-tertiary);
+  transition: transform 0.2s ease;
+  margin-left: var(--space-2);
+}
+
+.custom-select:hover .select-arrow {
+  color: var(--text-secondary);
+}
+
+.custom-dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  max-height: 240px;
+  overflow-y: auto;
+  z-index: 100;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.dropdown-option {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3);
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  font-size: var(--text-base);
+  font-family: var(--font-system);
+  cursor: pointer;
+  transition: background 0.15s ease;
+  text-align: left;
+}
+
+.dropdown-option:hover {
+  background: var(--bg-tertiary);
+}
+
+.dropdown-option.active {
+  background: rgba(139, 92, 246, 0.15);
+  color: var(--accent-primary);
+}
+
+.dropdown-option.active:hover {
+  background: rgba(139, 92, 246, 0.2);
+}
+
+.option-label {
+  flex: 1;
+}
+
+.option-check {
+  color: var(--accent-primary);
+  font-size: 0.9rem;
+  font-weight: bold;
+  margin-left: var(--space-2);
+}
+
+/* Dropdown transition */
+.dropdown-enter-active,
+.dropdown-leave-active {
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+.dropdown-enter-from,
+.dropdown-leave-to {
+  opacity: 0;
+  transform: translateY(-8px);
 }
 
 .field-textarea {
