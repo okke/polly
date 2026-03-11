@@ -1,0 +1,54 @@
+{
+  "title": "AI and the Future of Software Engineering",
+  "statements": [
+    {
+      "text": "Within five years, AI will make most mid-level coding roles economically unjustifiable.",
+      "id": "s1"
+    },
+    {
+      "text": "The real risk of AI in engineering is not job loss, but a collapse in deep technical judgment.",
+      "id": "s2"
+    },
+    {
+      "text": "Teams that ban AI coding tools today are acting as responsibly as teams that once banned cloud.",
+      "id": "s3"
+    },
+    {
+      "text": "Software quality will improve with AI, even if fewer engineers understand the code they ship.",
+      "id": "s4"
+    },
+    {
+      "text": "Computer science education should reduce emphasis on syntax and focus on system verification.",
+      "id": "s5"
+    },
+    {
+      "text": "Senior engineers are more threatened by AI than juniors because experience is easier to imitate than learn.",
+      "id": "s6"
+    },
+    {
+      "text": "The best developers will soon be defined more by review and orchestration than by implementation.",
+      "id": "s7"
+    },
+    {
+      "text": "AI will widen the gap between elite engineers and everyone else more than it replaces jobs outright.",
+      "id": "s8"
+    },
+    {
+      "text": "Relying on AI for routine coding is no more harmful than relying on compilers or frameworks.",
+      "id": "s9"
+    },
+    {
+      "text": "The industry is overestimating AI's impact on employment and underestimating its impact on liability.",
+      "id": "s10"
+    }
+  ],
+  "context": {
+    "topic": "Ai and the future of software engineering",
+    "tone": "professional",
+    "audience": "experienced software developers",
+    "additional_context": "Ai seems to take over the software engineering space. More and more engineers are worried about job safety, education, and software quality. But is this really the things to worry about."
+  },
+  "id": "poll_1773185112_d25fff31",
+  "created_at": "2026-03-10T23:25:12Z",
+  "updated_at": "2026-03-10T23:25:48Z"
+}

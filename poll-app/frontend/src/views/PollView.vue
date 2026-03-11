@@ -20,6 +20,7 @@ const error = ref(null)
 const renderKey = ref(0) // Key to force clean re-render
 const isFinalized = ref(false) // Track if votes are finalized
 const psychAnalysis = ref(null) // Store psychological analysis
+const isAnalyzing = ref(false) // Track if we're waiting for AI analysis
 
 // Compute progress
 const answeredCount = computed(() => Object.keys(votes.value).length)
@@ -37,10 +38,21 @@ function loadSavedVotes() {
       const currentPollId = poll.value?.id
       
       if (savedPollId && currentPollId && savedPollId === currentPollId) {
-        // Poll IDs match, load the votes and finalized state
+        // Poll IDs match, load the votes
         votes.value = savedData.votes || {}
-        isFinalized.value = savedData.finalized || false
-        console.log('[Poll] Loaded saved votes for poll:', currentPollId, 'Finalized:', isFinalized.value)
+        
+        // Only load finalized state if we actually have votes
+        // If finalized but no votes, something went wrong (likely server reset)
+        if (savedData.finalized && Object.keys(votes.value).length > 0) {
+          isFinalized.value = true
+          console.log('[Poll] Loaded saved votes for poll:', currentPollId, 'Finalized:', isFinalized.value)
+        } else {
+          isFinalized.value = false
+          if (savedData.finalized) {
+            console.log('[Poll] Finalized state without votes - clearing (likely server reset)')
+            localStorage.removeItem('polly-votes')
+          }
+        }
       } else if (savedPollId && currentPollId && savedPollId !== currentPollId) {
         // Different poll, clear storage
         console.log('[Poll] Poll changed, clearing old votes')
@@ -162,6 +174,11 @@ async function finalizeVotes() {
     isFinalized.value = true
     console.log('[Poll] Votes finalized, requesting psychological analysis...')
     
+    // Show success overlay immediately with loading state
+    showSuccess.value = true
+    isAnalyzing.value = true
+    psychAnalysis.value = null
+    
     // Request psychological analysis
     try {
       const response = await axios.post('/api/analyze', {
@@ -177,21 +194,25 @@ async function finalizeVotes() {
       console.error('[Poll] Failed to get analysis:', analysisError)
       // Don't fail the finalization if analysis fails
       psychAnalysis.value = null
+    } finally {
+      isAnalyzing.value = false
     }
     
-    // Show success with analysis
-    showSuccess.value = true
-    
-    // Hide success after longer time to read analysis
-    setTimeout(() => {
-      showSuccess.value = false
-    }, 15000) // 15 seconds to read the analysis
+    // Overlay stays open until user closes it manually
   } catch (e) {
     error.value = 'Failed to finalize votes'
     isFinalized.value = false
+    showSuccess.value = false
   } finally {
     isSubmitting.value = false
   }
+}
+
+// Close success overlay manually
+function closeSuccessOverlay() {
+  showSuccess.value = false
+  psychAnalysis.value = null
+  isAnalyzing.value = false
 }
 
 // Handle reset from server
@@ -199,11 +220,12 @@ async function handleReset() {
   console.log('[Poll] Reset received from server')
   
   try {
-    // Clear votes (reactive update)
+    // Clear all state
     votes.value = {}
     isFinalized.value = false
     psychAnalysis.value = null
-    psychAnalysis.value = null
+    isAnalyzing.value = false
+    showSuccess.value = false
     
     // Wait for Vue to process
     await nextTick()
@@ -221,9 +243,6 @@ async function handleReset() {
     } catch (storageError) {
       console.error('[Poll] Error cleaning storage:', storageError)
     }
-    
-    // Hide success message if showing
-    showSuccess.value = false
     
     console.log('[Poll] All data cleared')
   } catch (e) {
@@ -312,10 +331,12 @@ async function handlePollUpdate(data) {
   // Update poll data
   poll.value = data.poll
   
-  // Clear votes and finalized state (they're invalid for the new poll)
+  // Clear votes and all finalized state (they're invalid for the new poll)
   votes.value = {}
   isFinalized.value = false
   psychAnalysis.value = null
+  isAnalyzing.value = false
+  showSuccess.value = false
   localStorage.removeItem('polly-votes')
   
   // Reset UI
@@ -438,7 +459,12 @@ onUnmounted(() => {
       </template>
     </div>
     
-    <SuccessOverlay :visible="showSuccess" :analysis="psychAnalysis" />
+    <SuccessOverlay 
+      :visible="showSuccess" 
+      :analysis="psychAnalysis" 
+      :loading="isAnalyzing"
+      @close="closeSuccessOverlay"
+    />
   </div>
 </template>
 

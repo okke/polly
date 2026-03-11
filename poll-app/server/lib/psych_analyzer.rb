@@ -20,24 +20,69 @@ class PsychAnalyzer
     puts "[PSYCH ANALYZER] Using model: #{model}"
     puts "[PSYCH ANALYZER] Analyzing #{votes.length} responses"
     
-    # Build the prompt
-    system_prompt = build_system_prompt
-    user_prompt = build_user_prompt(poll_data, votes)
+    # Extract context if available
+    context = poll_data['context'] || {}
     
-    # Call OpenAI
-    response = @client.chat(
-      parameters: {
-        model: model,
-        messages: [
-          { role: 'system', content: system_prompt },
-          { role: 'user', content: user_prompt }
-        ],
-        temperature: 1.2, # High creativity for humor
-        max_tokens: 500
-      }
-    )
+    # Build the prompt
+    system_prompt = build_system_prompt(context)
+    user_prompt = build_user_prompt(poll_data, votes, context)
+    
+    # Prepare parameters for OpenAI API
+    # Newer models use max_completion_tokens, older use max_tokens
+    api_params = {
+      model: model,
+      messages: [
+        { role: 'system', content: system_prompt },
+        { role: 'user', content: user_prompt }
+      ],
+      temperature: 1.2 # High creativity for humor
+    }
+    
+    # Use max_completion_tokens for newer models, max_tokens for older
+    # Keep it short and punchy
+    if model.match?(/gpt-5|gpt-4\.1/)
+      api_params[:max_completion_tokens] = 300
+    else
+      api_params[:max_tokens] = 300
+    end
+    
+    # Call OpenAI with error handling
+    begin
+      response = @client.chat(parameters: api_params)
+    rescue OpenAI::Error => api_error
+      puts "[PSYCH ANALYZER] OpenAI API Error: #{api_error.message}"
+      # Try fallback model if the selected one fails
+      if model != 'gpt-4o'
+        puts "[PSYCH ANALYZER] Retrying with fallback model: gpt-4o"
+        model = 'gpt-4o'
+        
+        # Rebuild params for fallback model
+        fallback_params = {
+          model: model,
+          messages: [
+            { role: 'system', content: system_prompt },
+            { role: 'user', content: user_prompt }
+          ],
+          temperature: 1.2,
+          max_completion_tokens: 300
+        }
+        
+        response = @client.chat(parameters: fallback_params)
+      else
+        raise api_error
+      end
+    end
+    
+    puts "[PSYCH ANALYZER] Response received: #{response.class}"
+    puts "[PSYCH ANALYZER] Response keys: #{response.keys.inspect}" if response.respond_to?(:keys)
     
     analysis = response.dig('choices', 0, 'message', 'content')
+    
+    if analysis.nil? || analysis.empty?
+      puts "[PSYCH ANALYZER] ERROR: No content in response"
+      puts "[PSYCH ANALYZER] Full response: #{response.inspect}"
+      raise "No content in OpenAI response"
+    end
     
     puts "[PSYCH ANALYZER] Generated analysis: #{analysis.length} chars"
     
@@ -59,35 +104,64 @@ class PsychAnalyzer
     # Find premium tier model (should be gpt-5.x or similar)
     premium = models.find { |m| m[:pricing_tier] == :premium }
     
-    if premium
+    # Fallback chain: premium -> standard -> budget -> hardcoded
+    model = if premium && premium[:id]
       premium[:id]
-    else
-      # Fallback to first available model
+    elsif (standard = models.find { |m| m[:pricing_tier] == :standard })
+      standard[:id]
+    elsif models.first
       models.first[:id]
+    else
+      # Ultimate fallback to a known working model
+      'gpt-4o'
     end
+    
+    puts "[PSYCH ANALYZER] Selected model: #{model}"
+    model
   end
   
-  def build_system_prompt
+  def build_system_prompt(context)
+    topic = context[:topic] || context['topic'] || 'various topics'
+    audience = context[:audience] || context['audience'] || 'people'
+    
     <<~PROMPT
-      You are a witty, slightly irreverent AI psychologist analyzing someone's responses to opinion poll questions.
+      You are a brilliant but slightly arrogant subject matter expert on #{topic}, known for your razor-sharp insights and brutally honest assessments.
       
-      Your job is to write a brief, humorous psychological profile based on their answers. The analysis should:
-      - Be 2-3 short paragraphs (150-200 words total)
-      - Have a playful, tongue-in-cheek tone (think horoscope meets psychology)
-      - Make amusing observations about their personality, contradictions, or patterns
-      - Include a catchy "diagnosis" or "type" label (e.g., "The Cautious Optimist", "The Contrarian Diplomat")
-      - Be entertaining but not mean-spirited
-      - Use humor but avoid offensive stereotypes
+      Your audience context: #{audience}
       
-      Write in second person ("you"). Start with your diagnosis/label as a bold heading.
+      Analyze their survey responses with a tone that is:
+      - DIRECT and CONFRONTING: Call out contradictions, questionable positions, or predictable thinking
+      - OVERDRAMATIC: Exaggerate their tendencies ("Oh darling, this is TEXTBOOK X behavior")
+      - SNOBBY yet COMPOSED: Maintain an air of intellectual superiority while staying calm and articulate
+      - WITTY and SHARP: Make clever observations that cut to the truth
       
-      Remember: this is meant to be fun and lighthearted, not actual psychological advice!
+      Format requirements:
+      - Start with a profile label using **Label** (e.g., "**The Enlightened Contrarian**" or "**The Predictably Safe Thinker**")
+      - Keep it SHORT: 1-2 punchy paragraphs (80-120 words max)
+      - Write in second person ("you")
+      - Be entertainingly harsh but not actually mean
+      - Focus on their stance within #{topic}, not generic psychology
+      
+      Think of yourself as a brilliant, slightly insufferable expert who's amused by their responses.
+      Be memorable. Be bold. Make them feel something.
     PROMPT
   end
   
-  def build_user_prompt(poll_data, votes)
+  def build_user_prompt(poll_data, votes, context)
     # Format the poll and responses for analysis
     prompt = "Poll: #{poll_data['title']}\n\n"
+    
+    # Add context if available
+    if context && !context.empty?
+      prompt += "Context:\n"
+      prompt += "- Topic: #{context[:topic] || context['topic']}\n" if context[:topic] || context['topic']
+      prompt += "- Audience: #{context[:audience] || context['audience']}\n" if context[:audience] || context['audience']
+      if context[:additional_context] || context['additional_context']
+        prompt += "- Background: #{context[:additional_context] || context['additional_context']}\n"
+      end
+      prompt += "\n"
+    end
+    
     prompt += "Here are the person's responses:\n\n"
     
     poll_data['statements'].each do |statement|
@@ -109,7 +183,7 @@ class PsychAnalyzer
       prompt += "Response: #{vote_text}\n\n"
     end
     
-    prompt += "Based on these responses, give me a humorous psychological analysis!"
+    prompt += "Now analyze them. Be sharp, be dramatic, be confronting. Make them feel seen (and maybe a little called out). Keep it under 120 words."
     
     prompt
   end

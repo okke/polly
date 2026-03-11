@@ -7,8 +7,14 @@ defineProps({
   analysis: {
     type: String,
     default: null
+  },
+  loading: {
+    type: Boolean,
+    default: false
   }
 })
+
+const emit = defineEmits(['close'])
 
 // Function to parse markdown-style bold headers (e.g., **Title**)
 function parseAnalysis(text) {
@@ -30,10 +36,29 @@ function parseAnalysis(text) {
 
 <template>
   <Transition name="overlay">
-    <div v-if="visible" class="success-overlay" @click.self="$emit('close')">
-      <div class="success-content glass-card" :class="{ 'has-analysis': analysis }">
+    <div v-if="visible" class="success-overlay" @click.self="emit('close')">
+      <div class="success-content glass-card" :class="{ 'has-analysis': analysis || loading }">
+        <!-- Close button -->
+        <button class="close-button" @click="emit('close')" title="Close">×</button>
+        
+        <!-- Loading state -->
+        <template v-if="loading">
+          <div class="analysis-header">
+            <div class="analysis-icon loading-icon">🧠</div>
+            <div class="analysis-title-section">
+              <span class="terminal-prompt">[ ANALYZING ]</span>
+              <h3 class="analysis-type">Consulting the experts...</h3>
+            </div>
+          </div>
+          
+          <div class="loading-spinner-container">
+            <div class="loading-spinner"></div>
+            <p class="loading-text">Generating your personalized analysis</p>
+          </div>
+        </template>
+        
         <!-- Show analysis if available -->
-        <template v-if="analysis">
+        <template v-else-if="analysis">
           <div class="analysis-header">
             <div class="analysis-icon">🧠</div>
             <div class="analysis-title-section">
@@ -99,6 +124,7 @@ function parseAnalysis(text) {
   padding: var(--space-8);
   text-align: center;
   max-width: 320px;
+  position: relative;
 }
 
 .success-content.has-analysis {
@@ -108,6 +134,33 @@ function parseAnalysis(text) {
   gap: var(--space-5);
   max-height: 85vh;
   overflow-y: auto;
+}
+
+.close-button {
+  position: absolute;
+  top: var(--space-4);
+  right: var(--space-4);
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-default);
+  border-radius: 50%;
+  color: var(--text-secondary);
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  z-index: 10;
+}
+
+.close-button:hover {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border-color: var(--border-focus);
+  transform: scale(1.1);
 }
 
 .success-icon {
@@ -242,5 +295,58 @@ function parseAnalysis(text) {
   font-size: var(--text-xs);
   color: var(--text-tertiary);
   font-style: italic;
+}
+
+/* Loading state styles */
+.loading-spinner-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-8) 0;
+}
+
+.loading-spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid var(--border-default);
+  border-top-color: var(--text-accent);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-text {
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  margin: 0;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.loading-icon {
+  animation: bounce 2s ease-in-out infinite;
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
 }
 </style>

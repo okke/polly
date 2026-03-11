@@ -1,0 +1,26 @@
+{
+  "title": "Common Ground in Soup Tasting",
+  "statements": [
+    {
+      "text": "A soup should be judged first at serving temperature, not while actively cooking.",
+      "id": "s1"
+    },
+    {
+      "text": "Texture matters more than seasoning in determining whether a soup is truly successful.",
+      "id": "s2"
+    },
+    {
+      "text": "Blind tasting is the only reliable way for chefs to evaluate soup without bias.",
+      "id": "s3"
+    }
+  ],
+  "context": {
+    "topic": "soup tasting",
+    "tone": "professional",
+    "audience": "chefs",
+    "additional_context": "let's find a common ground how to taste soup"
+  },
+  "id": "poll_1773184547_0c039b02",
+  "created_at": "2026-03-10T23:15:47Z",
+  "updated_at": "2026-03-10T23:15:50Z"
+}

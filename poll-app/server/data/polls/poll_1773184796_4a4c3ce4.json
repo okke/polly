@@ -1,0 +1,46 @@
+{
+  "title": "Do Legacy Languages Still Win?",
+  "statements": [
+    {
+      "text": "COBOL's readability in business logic still surpasses most modern enterprise stacks.",
+      "id": "s1"
+    },
+    {
+      "text": "FORTRAN remains the better choice for numerical computing when performance truly matters.",
+      "id": "s2"
+    },
+    {
+      "text": "PL/I solved multi-paradigm programming decades before modern languages made it fashionable.",
+      "id": "s3"
+    },
+    {
+      "text": "RPG's opinionated structure delivers more maintainable business software than flexible languages do.",
+      "id": "s4"
+    },
+    {
+      "text": "Modern languages prioritize developer appeal over the long-term stability legacy systems demand.",
+      "id": "s5"
+    },
+    {
+      "text": "Most rewrites from legacy languages to modern ones trade reliability for résumé-driven decisions.",
+      "id": "s6"
+    },
+    {
+      "text": "Old languages enforced discipline that today's tooling still fails to replace.",
+      "id": "s7"
+    },
+    {
+      "text": "If designed today, a language like COBOL would be praised as domain-driven engineering.",
+      "id": "s8"
+    }
+  ],
+  "context": {
+    "topic": "old programming languages",
+    "tone": "professional",
+    "audience": "experienced developers",
+    "additional_context": "We all use modern programming languages but how about the features of COBOL, PL1, RPG, FORTRAN and so on. Let's see if they can still beat the new kids on the block"
+  },
+  "id": "poll_1773184796_4a4c3ce4",
+  "created_at": "2026-03-10T23:19:56Z",
+  "updated_at": "2026-03-10T23:20:20Z"
+}

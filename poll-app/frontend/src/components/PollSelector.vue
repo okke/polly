@@ -62,6 +62,11 @@ async function deletePoll(pollId) {
   }
 }
 
+// Cancel delete
+function cancelDelete() {
+  showDeleteConfirm.value = null
+}
+
 // Format date nicely
 function formatDate(isoString) {
   if (!isoString) return 'Unknown'
@@ -117,14 +122,22 @@ defineExpose({ fetchPolls })
           </div>
         </div>
         
-        <button
-          v-if="showDeleteConfirm === poll.id"
-          class="delete-btn confirm"
-          title="Click again to confirm delete"
-          @click.stop="deletePoll(poll.id)"
-        >
-          <span>Sure?</span>
-        </button>
+        <div v-if="showDeleteConfirm === poll.id" class="delete-actions">
+          <button
+            class="delete-btn cancel"
+            title="Cancel"
+            @click.stop="cancelDelete"
+          >
+            <span>✕</span>
+          </button>
+          <button
+            class="delete-btn confirm"
+            title="Click to confirm delete"
+            @click.stop="deletePoll(poll.id)"
+          >
+            <span>Delete?</span>
+          </button>
+        </div>
         <button
           v-else
           class="delete-btn"
@@ -240,6 +253,12 @@ defineExpose({ fetchPolls })
   font-weight: 600;
 }
 
+.delete-actions {
+  display: flex;
+  align-items: stretch;
+  border-left: 1px solid var(--border-color);
+}
+
 .delete-btn {
   display: flex;
   align-items: center;
@@ -247,11 +266,16 @@ defineExpose({ fetchPolls })
   width: 32px;
   background: transparent;
   border: none;
-  border-left: 1px solid var(--border-color);
   color: var(--text-secondary);
   cursor: pointer;
   font-size: 1.25rem;
   transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+/* When delete-btn is standalone (not in delete-actions) */
+.poll-item > .delete-btn {
+  border-left: 1px solid var(--border-color);
   border-radius: 0 6px 6px 0;
 }
 
@@ -260,15 +284,33 @@ defineExpose({ fetchPolls })
   color: #ff3b30;
 }
 
+.delete-btn.cancel {
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 1rem;
+}
+
+.delete-btn.cancel:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
 .delete-btn.confirm {
+  width: auto;
+  min-width: 60px;
+  padding: 0 var(--space-3);
   background: rgba(255, 59, 48, 0.2);
   color: #ff3b30;
-  font-size: 0.7rem;
-  font-weight: 600;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  border-radius: 0 6px 6px 0;
 }
 
 .delete-btn.confirm:hover {
-  background: rgba(255, 59, 48, 0.3);
+  background: rgba(255, 59, 48, 0.4);
+  transform: scale(1.02);
 }
 
 /* Scrollbar styling */

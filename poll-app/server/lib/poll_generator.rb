@@ -38,6 +38,15 @@ class PollGenerator
     # Add statement IDs
     add_statement_ids(poll_data, num_questions)
     
+    # Add generation context metadata to the poll for later use
+    poll_data['context'] = {
+      topic: topic,
+      tone: tone,
+      audience: audience,
+      additional_context: additional_context,
+      additional_instructions: additional_instructions
+    }.compact # Remove nil values
+    
     # Return the formatted poll
     {
       status: 'ok',
