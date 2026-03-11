@@ -3,6 +3,7 @@ import HomeView from './views/HomeView.vue'
 import AboutView from './views/AboutView.vue'
 import PollView from './views/PollView.vue'
 import AdminView from './views/AdminView.vue'
+import PresentationView from './views/PresentationView.vue'
 
 const routes = [
   {
@@ -24,6 +25,11 @@ const routes = [
     path: '/admin',
     name: 'admin',
     component: AdminView
+  },
+  {
+    path: '/presentation',
+    name: 'presentation',
+    component: PresentationView
   }
 ]
 

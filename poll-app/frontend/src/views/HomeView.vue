@@ -14,6 +14,10 @@ function goToAbout() {
 function goToAdmin() {
   router.push('/admin')
 }
+
+function goToPresentation() {
+  router.push('/presentation')
+}
 </script>
 
 <template>
@@ -43,6 +47,11 @@ function goToAdmin() {
           <button class="cta-button" @click="goToVoting">
             <span class="cta-icon">→</span>
             <span>Start Voting</span>
+          </button>
+          
+          <button class="cta-button secondary" @click="goToPresentation">
+            <span class="cta-icon">📊</span>
+            <span>Presentation</span>
           </button>
           
           <button class="cta-button secondary" @click="goToAbout">
