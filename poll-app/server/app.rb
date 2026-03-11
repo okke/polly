@@ -280,6 +280,44 @@ post '/api/analyze' do
   end
 end
 
+# Generate group psychological analysis of all participants
+post '/api/analyze-group' do
+  content_type :json
+  
+  begin
+    puts "[ANALYZE GROUP] Generating group analysis for #{VOTES.keys.length} participants"
+    
+    # Get current poll
+    poll_data = load_poll
+    
+    unless poll_data
+      halt 400, { error: 'No active poll' }.to_json
+    end
+    
+    unless VOTES && !VOTES.empty?
+      halt 400, { error: 'No votes to analyze' }.to_json
+    end
+    
+    # Create analyzer and generate group analysis
+    analyzer = PsychAnalyzer.new
+    analysis = analyzer.analyze_group(poll_data, VOTES)
+    
+    {
+      status: 'ok',
+      analysis: analysis,
+      participant_count: VOTES.keys.length,
+      timestamp: Time.now.utc.iso8601
+    }.to_json
+  rescue => e
+    puts "[ANALYZE GROUP] Error: #{e.message}"
+    puts "[ANALYZE GROUP] Backtrace: #{e.backtrace.first(5).join("\n")}"
+    halt 500, {
+      error: 'Failed to generate group analysis',
+      details: e.message
+    }.to_json
+  end
+end
+
 # Get results
 get '/api/results' do
   content_type :json
@@ -560,6 +598,54 @@ post '/api/reset' do
   broadcast_results
   
   { status: 'ok', message: 'All votes cleared' }.to_json
+end
+
+# Generate random votes for testing
+post '/api/generate-random-votes' do
+  content_type :json
+  
+  begin
+    data = JSON.parse(request.body.read)
+    count = data['count'].to_i
+    
+    # Validate count
+    halt 400, { error: 'Count must be between 1 and 1000' }.to_json unless count.between?(1, 1000)
+    
+    # Load current poll
+    poll_data = load_poll
+    halt 400, { error: 'No active poll' }.to_json unless poll_data
+    
+    # Valid vote options
+    vote_options = %w[strongly_agree agree disagree strongly_disagree]
+    
+    # Generate random votes for N participants
+    count.times do
+      participant_id = SecureRandom.uuid
+      VOTES[participant_id] = {}
+      
+      # Vote on each statement randomly
+      poll_data['statements'].each do |statement|
+        VOTES[participant_id][statement['id']] = vote_options.sample
+      end
+    end
+    
+    puts "[RANDOM VOTES] Generated #{count} random participants"
+    
+    # Broadcast updated results
+    broadcast_results
+    
+    {
+      status: 'ok',
+      message: "Generated #{count} random participants",
+      total_participants: VOTES.keys.length
+    }.to_json
+  rescue JSON::ParserError => e
+    halt 400, { error: 'Invalid JSON' }.to_json
+  rescue => e
+    puts "[RANDOM VOTES] Error: #{e.message}"
+    puts e.backtrace
+    halt 500, { error: 'Failed to generate random votes', details: e.message }.to_json
+  end
 end
 
 # List all polls

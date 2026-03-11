@@ -8,6 +8,8 @@ import ConnectionPanel from '../components/ConnectionPanel.vue'
 import ResultsGrid from '../components/ResultsGrid.vue'
 import ControlBar from '../components/ControlBar.vue'
 import PollGeneratorModal from '../components/PollGeneratorModal.vue'
+import GroupAnalysisModal from '../components/GroupAnalysisModal.vue'
+import RandomVotesModal from '../components/RandomVotesModal.vue'
 import PollSelector from '../components/PollSelector.vue'
 
 const { connect, disconnect, on, isConnected } = useSocket()
@@ -25,6 +27,15 @@ const isLoading = ref(true)
 const error = ref(null)
 const lastUpdate = ref(null)
 const showGeneratorModal = ref(false)
+
+// Group analysis modal state
+const showGroupAnalysis = ref(false)
+const groupAnalysisLoading = ref(false)
+const groupAnalysisText = ref(null)
+const groupParticipantCount = ref(0)
+
+// Random votes modal state
+const showRandomVotesModal = ref(false)
 
 // Computed poll results with statement info
 const pollResults = computed(() => {
@@ -154,6 +165,51 @@ async function resetVotes() {
     alert('Failed to reset votes')
   }
 }
+
+// Analyze group
+async function handleAnalyzeGroup() {
+  info('Requesting group analysis')
+  
+  // Check if we have participants
+  if (participantCount.value === 0) {
+    alert('No participants have voted yet. Cannot analyze an empty group.')
+    return
+  }
+  
+  // Show modal with loading state
+  showGroupAnalysis.value = true
+  groupAnalysisLoading.value = true
+  groupAnalysisText.value = null
+  groupParticipantCount.value = participantCount.value
+  
+  try {
+    const response = await axios.post('/api/analyze-group')
+    
+    if (response.data.status === 'ok') {
+      groupAnalysisText.value = response.data.analysis
+      groupParticipantCount.value = response.data.participant_count
+      info('Group analysis received')
+    } else {
+      throw new Error(response.data.error || 'Analysis failed')
+    }
+  } catch (e) {
+    info('Group analysis failed', { error: e.message })
+    alert(`Failed to analyze group: ${e.response?.data?.error || e.message}`)
+    showGroupAnalysis.value = false
+  } finally {
+    groupAnalysisLoading.value = false
+  }
+}
+
+// Open random votes modal
+function openRandomVotesModal() {
+  showRandomVotesModal.value = true
+}
+
+// Handle random votes generated
+function handleRandomVotesGenerated(data) {
+  info('Random votes generated', { count: data.count, total: data.totalParticipants })
+}
 // Handle poll change (when user selects a different poll)
 async function handlePollChanged(pollId) {
   info('Poll activated', { poll_id: pollId })
@@ -281,6 +337,8 @@ onUnmounted(() => {
               @export="exportResults"
               @reset="resetVotes"
               @toggleTheme="toggleTheme"
+              @analyzeGroup="handleAnalyzeGroup"
+              @generateRandomVotes="openRandomVotesModal"
             />
           </aside>
           
@@ -312,6 +370,22 @@ onUnmounted(() => {
       :visible="showGeneratorModal"
       @close="showGeneratorModal = false"
       @accept="handleAcceptGeneratedPoll"
+    />
+    
+    <!-- Group Analysis Modal -->
+    <GroupAnalysisModal
+      :visible="showGroupAnalysis"
+      :loading="groupAnalysisLoading"
+      :analysis="groupAnalysisText"
+      :participantCount="groupParticipantCount"
+      @close="showGroupAnalysis = false"
+    />
+    
+    <!-- Random Votes Modal -->
+    <RandomVotesModal
+      :visible="showRandomVotesModal"
+      @close="showRandomVotesModal = false"
+      @generated="handleRandomVotesGenerated"
     />
   </div>
 </template>

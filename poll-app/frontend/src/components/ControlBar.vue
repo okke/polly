@@ -12,7 +12,7 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['export', 'reset', 'toggleTheme'])
+const emit = defineEmits(['export', 'reset', 'toggleTheme', 'analyzeGroup', 'generateRandomVotes'])
 
 const formattedTime = computed(() => {
   if (!props.lastUpdate) return '--:--:--'
@@ -52,6 +52,16 @@ const formattedTime = computed(() => {
       <button class="action-btn" @click="emit('export')">
         <span class="btn-icon">↓</span>
         <span class="btn-text">Export CSV</span>
+      </button>
+      
+      <button class="action-btn warning" @click="emit('generateRandomVotes')">
+        <span class="btn-icon">🎲</span>
+        <span class="btn-text">Random Votes</span>
+      </button>
+      
+      <button class="action-btn primary" @click="emit('analyzeGroup')">
+        <span class="btn-icon">🧠</span>
+        <span class="btn-text">Analyze Group</span>
       </button>
       
       <button class="action-btn danger" @click="emit('reset')">
@@ -166,6 +176,28 @@ const formattedTime = computed(() => {
 .action-btn.danger:hover {
   border-color: var(--accent-error);
   color: var(--accent-error);
+}
+
+.action-btn.primary {
+  border-color: rgba(52, 211, 153, 0.3);
+  background: rgba(52, 211, 153, 0.1);
+}
+
+.action-btn.primary:hover {
+  border-color: rgba(52, 211, 153, 0.5);
+  background: rgba(52, 211, 153, 0.15);
+  color: var(--accent-success);
+}
+
+.action-btn.warning {
+  border-color: rgba(251, 191, 36, 0.3);
+  background: rgba(251, 191, 36, 0.1);
+}
+
+.action-btn.warning:hover {
+  border-color: rgba(251, 191, 36, 0.5);
+  background: rgba(251, 191, 36, 0.15);
+  color: rgb(251, 191, 36);
 }
 
 .btn-icon {

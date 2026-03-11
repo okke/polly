@@ -95,6 +95,83 @@ class PsychAnalyzer
     generate_fallback_analysis(votes)
   end
   
+  # Analyze group voting patterns across all participants
+  # @param poll_data [Hash] The poll with title and statements
+  # @param all_votes [Hash] All participants' votes (participant_id => { statement_id => vote })
+  # @return [String] The group analysis text
+  def analyze_group(poll_data, all_votes)
+    # Get the best available model
+    model = get_best_model
+    
+    puts "[PSYCH ANALYZER GROUP] Using model: #{model}"
+    puts "[PSYCH ANALYZER GROUP] Analyzing #{all_votes.length} participants"
+    
+    # Extract context if available
+    context = poll_data['context'] || {}
+    
+    # Build the prompt for group analysis
+    system_prompt = build_group_system_prompt(context)
+    user_prompt = build_group_user_prompt(poll_data, all_votes, context)
+    
+    # Prepare parameters for OpenAI API
+    api_params = {
+      model: model,
+      messages: [
+        { role: 'system', content: system_prompt },
+        { role: 'user', content: user_prompt }
+      ],
+      temperature: 1.2
+    }
+    
+    # Use max_completion_tokens for newer models
+    if model.match?(/gpt-5|gpt-4\.1/)
+      api_params[:max_completion_tokens] = 400
+    else
+      api_params[:max_tokens] = 400
+    end
+    
+    # Call OpenAI with error handling
+    begin
+      response = @client.chat(parameters: api_params)
+    rescue OpenAI::Error => api_error
+      puts "[PSYCH ANALYZER GROUP] OpenAI API Error: #{api_error.message}"
+      if model != 'gpt-4o'
+        puts "[PSYCH ANALYZER GROUP] Retrying with fallback model: gpt-4o"
+        model = 'gpt-4o'
+        
+        fallback_params = {
+          model: model,
+          messages: [
+            { role: 'system', content: system_prompt },
+            { role: 'user', content: user_prompt }
+          ],
+          temperature: 1.2,
+          max_completion_tokens: 400
+        }
+        
+        response = @client.chat(parameters: fallback_params)
+      else
+        raise api_error
+      end
+    end
+    
+    analysis = response.dig('choices', 0, 'message', 'content')
+    
+    if analysis.nil? || analysis.empty?
+      puts "[PSYCH ANALYZER GROUP] ERROR: No content in response"
+      raise "No content in OpenAI response"
+    end
+    
+    puts "[PSYCH ANALYZER GROUP] Generated analysis: #{analysis.length} chars"
+    
+    analysis
+  rescue => e
+    puts "[PSYCH ANALYZER GROUP] Error: #{e.message}"
+    puts "[PSYCH ANALYZER GROUP] Backtrace: #{e.backtrace.first(5).join("\n")}"
+    
+    "**The Analysis Failed**\n\nOh dear, it seems our analysis system couldn't handle the sheer complexity of this group's responses. How deliciously ironic."
+  end
+  
   private
   
   def get_best_model
@@ -184,6 +261,87 @@ class PsychAnalyzer
     end
     
     prompt += "Now analyze them. Be sharp, be dramatic, be confronting. Make them feel seen (and maybe a little called out). Keep it under 120 words."
+    
+    prompt
+  end
+  
+  def build_group_system_prompt(context)
+    topic = context[:topic] || context['topic'] || 'various topics'
+    audience = context[:audience] || context['audience'] || 'people'
+    
+    <<~PROMPT
+      You are a brilliant, slightly arrogant expert on #{topic} and group dynamics, analyzing collective voting patterns.
+      
+      Your audience: #{audience}
+      
+      You're analyzing how an ENTIRE GROUP responded to survey statements. Focus on:
+      - COLLECTIVE PATTERNS: What do the voting distributions reveal about this group?
+      - CONSENSUS vs DIVISION: Where do they agree? Where are they split?
+      - GROUP IDENTITY: What type of group is this based on their responses?
+      - CONFRONTING OBSERVATIONS: Call out groupthink, predictable patterns, or surprising unanimity
+      
+      Tone requirements:
+      - DIRECT and SHARP: Make bold claims about what this group reveals
+      - OVERDRAMATIC: Exaggerate for effect ("This group is PATHOLOGICALLY agreeable on X")
+      - SNOBBY yet COMPOSED: You're above it all, observing with amusement
+      - WITTY: Make clever observations about collective behavior
+      
+      Format:
+      - Start with a group label using **Label** (e.g., "**The Comfortably Conventional Majority**")
+      - Keep it concise: 2-3 short paragraphs (120-160 words)
+      - Address the group as "this group," "they," or "you all"
+      - Focus on #{topic} insights, not generic psychology
+      
+      You're the expert calling out an entire room. Make it memorable.
+    PROMPT
+  end
+  
+  def build_group_user_prompt(poll_data, all_votes, context)
+    prompt = "Poll: #{poll_data['title']}\n"
+    prompt += "Participants: #{all_votes.length}\n\n"
+    
+    # Add context
+    if context && !context.empty?
+      prompt += "Context:\n"
+      prompt += "- Topic: #{context[:topic] || context['topic']}\n" if context[:topic] || context['topic']
+      prompt += "- Audience: #{context[:audience] || context['audience']}\n" if context[:audience] || context['audience']
+      prompt += "\n"
+    end
+    
+    # Calculate aggregate results for each statement
+    prompt += "Voting patterns:\n\n"
+    
+    poll_data['statements'].each do |statement|
+      statement_id = statement['id']
+      
+      # Count votes for this statement
+      votes_count = {
+        'strongly_agree' => 0,
+        'agree' => 0,
+        'disagree' => 0,
+        'strongly_disagree' => 0
+      }
+      
+      all_votes.each do |participant_id, participant_votes|
+        vote = participant_votes[statement_id]
+        votes_count[vote] += 1 if vote && votes_count.key?(vote)
+      end
+      
+      total = votes_count.values.sum
+      next if total == 0
+      
+      # Convert to percentages
+      prompt += "Statement: \"#{statement['text']}\"\n"
+      votes_count.each do |vote_type, count|
+        next if count == 0
+        percentage = (count.to_f / total * 100).round(1)
+        label = vote_type.split('_').map(&:capitalize).join(' ')
+        prompt += "  - #{label}: #{percentage}% (#{count})\n"
+      end
+      prompt += "\n"
+    end
+    
+    prompt += "Analyze this group's collective responses. Be sharp, dramatic, and insightful. What does this voting pattern reveal about who they are? Keep it under 160 words."
     
     prompt
   end
