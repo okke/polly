@@ -1,8 +1,9 @@
 <script setup>
-import { ref, onMounted, onUnmounted, computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 
 const router = useRouter()
+const route = useRoute()
 const currentSlide = ref(0)
 
 const slides = [
@@ -61,21 +62,21 @@ const slides = [
     left: {
       subtitle: 'Backend',
       items: [
-        'Ruby + Sinatra 3.x',
-        'Faye-WebSocket',
-        'Puma 6.x server',
-        'ruby-openai 4.x',
-        'JSON file storage'
+        { name: 'Ruby + Sinatra 3.x', desc: 'Lightweight web framework for building simple, fast HTTP APIs' },
+        { name: 'Faye-WebSocket', desc: 'Real-time bidirectional event-based communication library' },
+        { name: 'Puma 6.x server', desc: 'Concurrent Ruby web server built for speed and parallelism' },
+        { name: 'ruby-openai 4.x', desc: 'Ruby client library for OpenAI API integration' },
+        { name: 'JSON file storage', desc: 'Simple file-based persistence for polls and metadata' }
       ]
     },
     right: {
       subtitle: 'Frontend',
       items: [
-        'Vue 3 + Composition API',
-        'Vue Router 4.x',
-        'Pinia state management',
-        'Vite 5.x build tool',
-        'Chart.js + axios'
+        { name: 'Vue 3 + Composition API', desc: 'Progressive JavaScript framework with modern reactive composition patterns' },
+        { name: 'Vue Router 4.x', desc: 'Official routing library for building single-page applications' },
+        { name: 'Pinia state management', desc: 'Intuitive, type-safe state management for Vue applications' },
+        { name: 'Vite 5.x build tool', desc: 'Next-generation frontend tooling with instant hot module replacement' },
+        { name: 'Chart.js + axios', desc: 'Visualization library and HTTP client for data fetching and display' }
       ]
     }
   },
@@ -140,21 +141,51 @@ const slides = [
 const totalSlides = computed(() => slides.length)
 const progress = computed(() => ((currentSlide.value + 1) / totalSlides.value) * 100)
 
+// Initialize from route parameter
+function initializeSlide() {
+  const slideParam = parseInt(route.params.slide)
+  if (!isNaN(slideParam) && slideParam >= 0 && slideParam < totalSlides.value) {
+    currentSlide.value = slideParam
+  } else {
+    currentSlide.value = 0
+  }
+}
+
+// Update route when slide changes
+function updateRoute(index) {
+  if (route.params.slide !== String(index)) {
+    router.replace({ name: 'presentation', params: { slide: index } })
+  }
+}
+
 function nextSlide() {
   if (currentSlide.value < totalSlides.value - 1) {
-    currentSlide.value++
+    const newSlide = currentSlide.value + 1
+    currentSlide.value = newSlide
+    updateRoute(newSlide)
   }
 }
 
 function prevSlide() {
   if (currentSlide.value > 0) {
-    currentSlide.value--
+    const newSlide = currentSlide.value - 1
+    currentSlide.value = newSlide
+    updateRoute(newSlide)
   }
 }
 
 function goToSlide(index) {
   currentSlide.value = index
+  updateRoute(index)
 }
+
+// Watch for route changes (browser back/forward)
+watch(() => route.params.slide, (newSlide) => {
+  const slideNum = parseInt(newSlide)
+  if (!isNaN(slideNum) && slideNum >= 0 && slideNum < totalSlides.value) {
+    currentSlide.value = slideNum
+  }
+})
 
 function handleKeydown(e) {
   if (e.key === 'ArrowRight' || e.key === ' ') {
@@ -168,9 +199,12 @@ function handleKeydown(e) {
   } else if (e.key === 'Home') {
     e.preventDefault()
     currentSlide.value = 0
+    updateRoute(0)
   } else if (e.key === 'End') {
     e.preventDefault()
-    currentSlide.value = totalSlides.value - 1
+    const lastSlide = totalSlides.value - 1
+    currentSlide.value = lastSlide
+    updateRoute(lastSlide)
   }
 }
 
@@ -183,6 +217,7 @@ function exitPresentation() {
 }
 
 onMounted(() => {
+  initializeSlide()
   window.addEventListener('keydown', handleKeydown)
 })
 
@@ -239,14 +274,30 @@ onUnmounted(() => {
               <div class="column">
                 <h3 class="column-title">{{ slides[currentSlide].left.subtitle }}</h3>
                 <ul class="split-list">
-                  <li v-for="(item, idx) in slides[currentSlide].left.items" :key="idx">{{ item }}</li>
+                  <li 
+                    v-for="(item, idx) in slides[currentSlide].left.items" 
+                    :key="idx"
+                    class="tech-item"
+                    :title="item.desc"
+                  >
+                    {{ item.name }}
+                    <span class="tooltip-icon">ℹ️</span>
+                  </li>
                 </ul>
               </div>
               <div class="column-divider"></div>
               <div class="column">
                 <h3 class="column-title">{{ slides[currentSlide].right.subtitle }}</h3>
                 <ul class="split-list">
-                  <li v-for="(item, idx) in slides[currentSlide].right.items" :key="idx">{{ item }}</li>
+                  <li 
+                    v-for="(item, idx) in slides[currentSlide].right.items" 
+                    :key="idx"
+                    class="tech-item"
+                    :title="item.desc"
+                  >
+                    {{ item.name }}
+                    <span class="tooltip-icon">ℹ️</span>
+                  </li>
                 </ul>
               </div>
             </div>
@@ -555,6 +606,31 @@ onUnmounted(() => {
   border-radius: 0.5rem;
   border-left: 3px solid #8b5cf6;
   font-size: 1.1rem;
+}
+
+.tech-item {
+  position: relative;
+  cursor: help;
+  transition: all 0.3s ease;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.tech-item:hover {
+  background: rgba(139, 92, 246, 0.15);
+  border-left-color: #a78bfa;
+  transform: translateX(5px);
+}
+
+.tooltip-icon {
+  opacity: 0.3;
+  font-size: 0.9rem;
+  transition: opacity 0.3s ease;
+}
+
+.tech-item:hover .tooltip-icon {
+  opacity: 0.7;
 }
 
 .column-divider {

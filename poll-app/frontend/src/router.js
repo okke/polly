@@ -28,6 +28,10 @@ const routes = [
   },
   {
     path: '/presentation',
+    redirect: '/presentation/0'
+  },
+  {
+    path: '/presentation/:slide',
     name: 'presentation',
     component: PresentationView
   }
