@@ -6,6 +6,14 @@ const router = useRouter()
 function goToVoting() {
   router.push('/vote')
 }
+
+function goToAbout() {
+  router.push('/about')
+}
+
+function goToAdmin() {
+  router.push('/admin')
+}
 </script>
 
 <template>
@@ -30,11 +38,23 @@ function goToVoting() {
           Vote anonymously and see how others think in real-time.
         </p>
         
-        <!-- CTA Button -->
-        <button class="cta-button" @click="goToVoting">
-          <span class="cta-icon">→</span>
-          <span>Start Voting</span>
-        </button>
+        <!-- CTA Buttons -->
+        <div class="cta-buttons">
+          <button class="cta-button" @click="goToVoting">
+            <span class="cta-icon">→</span>
+            <span>Start Voting</span>
+          </button>
+          
+          <button class="cta-button secondary" @click="goToAbout">
+            <span class="cta-icon">ℹ</span>
+            <span>About Me</span>
+          </button>
+          
+          <button class="cta-button secondary" @click="goToAdmin">
+            <span class="cta-icon">⚙</span>
+            <span>Admin</span>
+          </button>
+        </div>
         
         <!-- Features -->
         <div class="features">
@@ -144,11 +164,21 @@ function goToVoting() {
   max-width: 500px;
 }
 
+.cta-buttons {
+  display: flex;
+  gap: var(--space-4);
+  margin-top: var(--space-4);
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
 .cta-button {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: var(--space-3);
   padding: var(--space-4) var(--space-8);
+  min-width: 180px;
   background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(59, 130, 246, 0.2));
   border: 1px solid rgba(139, 92, 246, 0.4);
   border-radius: var(--radius-xl);
@@ -159,7 +189,6 @@ function goToVoting() {
   transition: all 0.3s ease;
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  margin-top: var(--space-4);
 }
 
 .cta-button:hover {
@@ -171,6 +200,17 @@ function goToVoting() {
 
 .cta-button:active {
   transform: translateY(0);
+}
+
+.cta-button.secondary {
+  background: var(--bg-secondary);
+  border-color: var(--border-default);
+}
+
+.cta-button.secondary:hover {
+  background: var(--bg-tertiary);
+  border-color: var(--border-focus);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
 }
 
 .cta-icon {
