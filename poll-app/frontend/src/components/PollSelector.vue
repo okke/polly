@@ -191,8 +191,10 @@ defineExpose({ fetchPolls })
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
-  max-height: 400px;
+  max-height: 800px;
   overflow-y: auto;
+  padding: 2px;
+  margin: -2px;
 }
 
 .poll-item {
@@ -206,14 +208,21 @@ defineExpose({ fetchPolls })
 }
 
 .poll-item:hover {
+  background: var(--bg-tertiary);
   border-color: var(--accent);
   box-shadow: 0 0 0 1px var(--accent);
 }
 
 .poll-item.active {
   background: var(--bg-tertiary);
-  border-color: var(--accent);
-  box-shadow: 0 0 0 1px var(--accent);
+  border-color: rgba(52, 211, 153, 0.6);
+  box-shadow: 0 0 0 1px rgba(52, 211, 153, 0.6), 0 0 12px rgba(52, 211, 153, 0.2);
+}
+
+.poll-item.active:hover {
+  background: var(--bg-elevated);
+  border-color: rgba(52, 211, 153, 0.8);
+  box-shadow: 0 0 0 1px rgba(52, 211, 153, 0.8), 0 0 16px rgba(52, 211, 153, 0.3);
 }
 
 .poll-content {
@@ -249,7 +258,7 @@ defineExpose({ fetchPolls })
 .active-indicator {
   margin-top: var(--space-2);
   font-size: 0.7rem;
-  color: var(--accent);
+  color: rgb(52, 211, 153);
   font-weight: 600;
 }
 
