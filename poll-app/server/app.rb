@@ -334,7 +334,7 @@ get '/api/info' do
   {
     ip: local_ip,
     port: settings.port,
-    url: "http://#{local_ip}:#{settings.port}",
+    url: "http://#{local_ip}:#{settings.port}/vote",
     participant_count: VOTES.keys.length,
     connected_clients: CLIENTS.count { |_, info| info[:role] == 'participant' }
   }.to_json
