@@ -509,6 +509,92 @@ post '/api/generate-poll' do
   end
 end
 
+# Regenerate poll using AI (admin only)
+post '/api/polls/:id/regenerate' do
+  content_type :json
+  
+  begin
+    poll_id = params[:id]
+    data = JSON.parse(request.body.read)
+    
+    # Load the existing poll
+    existing_poll = PollStorage.load_poll(poll_id)
+    unless existing_poll
+      halt 404, {
+        status: 'error',
+        error: 'Poll not found',
+        details: "Poll #{poll_id} does not exist"
+      }.to_json
+    end
+    
+    # Validate that poll has context (check both symbol and string keys)
+    poll_context = existing_poll[:context] || existing_poll['context']
+    unless poll_context
+      halt 400, {
+        status: 'error',
+        error: 'Cannot regenerate',
+        details: 'Poll was not generated with AI and has no context'
+      }.to_json
+    end
+    
+    # Prepare parameters
+    regenerate_params = {
+      poll_context: poll_context,
+      kept_statements: data['kept_statements'] || [],
+      total_questions: (data['total_questions'] || 5).to_i,
+      model: data['model'] || 'gpt-4o-mini'
+    }
+    
+    puts "[REGENERATE POLL] Poll ID: #{poll_id}, Keeping: #{regenerate_params[:kept_statements].length}, Total: #{regenerate_params[:total_questions]}"
+    
+    # Regenerate poll using AI
+    result = PollGenerator.regenerate(regenerate_params)
+    
+    if result[:status] == 'ok'
+      puts "[REGENERATE POLL] Success - Regenerated poll: #{result[:poll]['title']}"
+      
+      # Update the existing poll
+      result[:poll]['id'] = poll_id
+      result[:poll]['created_at'] = existing_poll[:created_at] || existing_poll['created_at']
+      result[:poll]['updated_at'] = Time.now.utc.iso8601
+      
+      PollStorage.update_poll(poll_id, result[:poll])
+      
+      # Reset votes for this poll
+      VOTES.clear
+      
+      # Broadcast reset to all clients
+      broadcast_reset
+      
+      # Broadcast updated poll
+      broadcast_poll_update
+      
+      puts "[REGENERATE POLL] Updated poll #{poll_id} and reset votes"
+      
+      result[:poll_id] = poll_id
+    else
+      puts "[REGENERATE POLL] Failed - #{result[:error]}: #{result[:details]}"
+    end
+    
+    result.to_json
+  rescue JSON::ParserError => e
+    halt 400, {
+      status: 'error',
+      error: 'Invalid JSON',
+      details: e.message
+    }.to_json
+  rescue => e
+    puts "[REGENERATE POLL] Unexpected error: #{e.message}"
+    puts e.backtrace.first(5).join("\n")
+    
+    halt 500, {
+      status: 'error',
+      error: 'Internal server error',
+      details: e.message
+    }.to_json
+  end
+end
+
 # Update poll (admin only)
 put '/api/poll' do
   content_type :json

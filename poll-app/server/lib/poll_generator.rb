@@ -77,6 +77,105 @@ class PollGenerator
     }
   end
   
+  # Regenerate a poll while keeping specified statements
+  def self.regenerate(params)
+    poll_context = params[:poll_context] # Original generation context
+    kept_statements = params[:kept_statements] || []
+    total_questions = params[:total_questions] || 5
+    model = params[:model] || 'gpt-4o-mini'
+    
+    # Validate parameters
+    raise ArgumentError, 'Poll context is required' if poll_context.nil?
+    raise ArgumentError, 'Total questions must be between 3 and 10' unless (3..10).include?(total_questions)
+    raise ArgumentError, 'Cannot keep more statements than total questions' if kept_statements.length > total_questions
+    
+    # Extract context from original poll
+    topic = poll_context['topic'] || poll_context[:topic]
+    tone = poll_context['tone'] || poll_context[:tone] || 'professional'
+    audience = poll_context['audience'] || poll_context[:audience]
+    additional_context = poll_context['additional_context'] || poll_context[:additional_context]
+    additional_instructions = poll_context['additional_instructions'] || poll_context[:additional_instructions]
+    
+    raise ArgumentError, 'Topic is required in poll context' if topic.nil? || topic.empty?
+    raise ArgumentError, 'Audience is required in poll context' if audience.nil? || audience.empty?
+    
+    # Calculate how many new statements to generate
+    num_new_statements = total_questions - kept_statements.length
+    
+    # Build the prompt with kept statements
+    system_prompt = build_system_prompt
+    user_prompt = build_regeneration_prompt(
+      topic: topic,
+      tone: tone,
+      num_new_statements: num_new_statements,
+      audience: audience,
+      additional_context: additional_context,
+      additional_instructions: additional_instructions,
+      kept_statements: kept_statements
+    )
+    
+    # Call OpenAI API
+    response = call_openai_api(system_prompt, user_prompt, model)
+    
+    # Parse and validate response
+    poll_data = parse_response(response)
+    
+    # Combine kept statements with new ones
+    combined_statements = kept_statements.map { |s| { 'text' => s } } + poll_data['statements']
+    
+    # Ensure we have exactly the requested number
+    combined_statements = combined_statements[0...total_questions]
+    
+    # Create final poll data
+    final_poll = {
+      'title' => poll_data['title'],
+      'statements' => combined_statements
+    }
+    
+    # Add statement IDs
+    add_statement_ids(final_poll, total_questions)
+    
+    # Preserve the original context
+    final_poll['context'] = {
+      topic: topic,
+      tone: tone,
+      audience: audience,
+      additional_context: additional_context,
+      additional_instructions: additional_instructions
+    }.compact
+    
+    # Return the formatted poll
+    {
+      status: 'ok',
+      poll: final_poll,
+      metadata: {
+        generated_at: Time.now.utc.iso8601,
+        model: response.dig('model'),
+        usage: response.dig('usage'),
+        kept_count: kept_statements.length,
+        new_count: num_new_statements
+      }
+    }
+  rescue OpenAI::Error => e
+    {
+      status: 'error',
+      error: 'OpenAI API error',
+      details: e.message
+    }
+  rescue ArgumentError => e
+    {
+      status: 'error',
+      error: 'Validation error',
+      details: e.message
+    }
+  rescue => e
+    {
+      status: 'error',
+      error: 'Failed to regenerate poll',
+      details: e.message
+    }
+  end
+  
   private
   
   def self.build_system_prompt
@@ -134,6 +233,62 @@ class PollGenerator
         "statements": [
           { "text": "First statement text" },
           { "text": "Second statement text" }
+        ]
+      }
+      
+      Do not include any text before or after the JSON object.
+    PROMPT
+    
+    prompt
+  end
+  
+  def self.build_regeneration_prompt(topic:, tone:, num_new_statements:, audience:, additional_context:, additional_instructions:, kept_statements:)
+    prompt = <<~PROMPT
+      Regenerate a poll with the following specifications:
+      
+      Topic: #{topic}
+      Tone: #{tone}
+      Target audience: #{audience}
+    PROMPT
+    
+    if additional_context && !additional_context.empty?
+      prompt += "\nFocus areas: #{additional_context}"
+    end
+    
+    if additional_instructions && !additional_instructions.empty?
+      prompt += "\nSpecial instructions: #{additional_instructions}"
+    end
+    
+    # Include kept statements so AI won't generate similar ones
+    if kept_statements && !kept_statements.empty?
+      prompt += "\n\nThe poll already includes these statements (DO NOT generate similar statements):\n"
+      kept_statements.each_with_index do |statement, idx|
+        prompt += "#{idx + 1}. \"#{statement}\"\n"
+      end
+      prompt += "\nGenerate #{num_new_statements} NEW statements that are DIFFERENT from the ones above."
+    else
+      prompt += "\n\nGenerate #{num_new_statements} statements."
+    end
+    
+    prompt += <<~PROMPT
+      
+      Requirements:
+      - Create exactly #{num_new_statements} NEW statements
+      - Each statement must be under 120 characters
+      - Use #{tone} tone throughout
+      - Consider the target audience: #{audience}
+      - Make statements PROVOCATIVE and DIVISIVE to spark debate
+      - Avoid obvious statements - aim to split the audience roughly 50/50
+      - Challenge assumptions and present controversial angles
+      - Each statement should make people think deeply before answering
+      - IMPORTANT: Do NOT create statements similar to the existing ones listed above
+      
+      Respond with ONLY a JSON object with a title and the NEW statements in this exact format:
+      {
+        "title": "Poll Title (max 50 characters)",
+        "statements": [
+          { "text": "First NEW statement text" },
+          { "text": "Second NEW statement text" }
         ]
       }
       

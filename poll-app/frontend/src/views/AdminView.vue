@@ -8,6 +8,7 @@ import ConnectionPanel from '../components/ConnectionPanel.vue'
 import ResultsGrid from '../components/ResultsGrid.vue'
 import ControlBar from '../components/ControlBar.vue'
 import PollGeneratorModal from '../components/PollGeneratorModal.vue'
+import PollRegeneratorModal from '../components/PollRegeneratorModal.vue'
 import GroupAnalysisModal from '../components/GroupAnalysisModal.vue'
 import RandomVotesModal from '../components/RandomVotesModal.vue'
 import PollSelector from '../components/PollSelector.vue'
@@ -27,6 +28,7 @@ const isLoading = ref(true)
 const error = ref(null)
 const lastUpdate = ref(null)
 const showGeneratorModal = ref(false)
+const showRegeneratorModal = ref(false)
 
 // Group analysis modal state
 const showGroupAnalysis = ref(false)
@@ -210,6 +212,33 @@ function openRandomVotesModal() {
 function handleRandomVotesGenerated(data) {
   info('Random votes generated', { count: data.count, total: data.totalParticipants })
 }
+
+// Open poll regenerator modal
+function openPollRegenerator() {
+  if (!poll.value) {
+    alert('No poll loaded')
+    return
+  }
+  
+  if (!poll.value.context) {
+    alert('Cannot regenerate: Poll was not generated with AI and has no context')
+    return
+  }
+  
+  showRegeneratorModal.value = true
+}
+
+// Handle regenerated poll
+async function handlePollRegenerated(data) {
+  info('Poll regenerated', { poll_id: data.poll_id })
+  showRegeneratorModal.value = false
+  
+  // Fetch updated data
+  await fetchData()
+  
+  alert('Poll regenerated successfully! Votes have been reset.')
+}
+
 // Handle poll change (when user selects a different poll)
 async function handlePollChanged(pollId) {
   info('Poll activated', { poll_id: pollId })
@@ -281,13 +310,22 @@ onUnmounted(() => {
           <h1 class="title">
             <span class="title-prefix">$</span> polly<span class="cursor">▌</span>
           </h1>
-          <span class="subtitle terminal-text">admin_dashboard</span>
         </div>
         
         <div class="header-right">
           <button class="generate-btn" @click="openPollGenerator" title="Generate poll with AI">
             <span class="ai-icon">✨</span>
             <span>Generate Poll</span>
+          </button>
+          
+          <button 
+            v-if="poll && poll.context" 
+            class="regenerate-btn" 
+            @click="openPollRegenerator" 
+            title="Regenerate current poll with AI"
+          >
+            <span class="ai-icon">🔄</span>
+            <span>Regenerate</span>
           </button>
           
           <div v-if="serverInfo" class="join-url-header">
@@ -372,6 +410,14 @@ onUnmounted(() => {
       :visible="showGeneratorModal"
       @close="showGeneratorModal = false"
       @accept="handleAcceptGeneratedPoll"
+    />
+    
+    <!-- Poll Regenerator Modal -->
+    <PollRegeneratorModal
+      :visible="showRegeneratorModal"
+      :poll="poll"
+      @close="showRegeneratorModal = false"
+      @regenerated="handlePollRegenerated"
     />
     
     <!-- Group Analysis Modal -->
@@ -491,6 +537,33 @@ onUnmounted(() => {
     opacity: 0.7;
     transform: scale(1.1);
   }
+}
+
+.regenerate-btn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(16, 185, 129, 0.1));
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  border-radius: var(--radius-lg);
+  color: var(--text-primary);
+  font-size: var(--text-sm);
+  font-weight: var(--font-medium);
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-out);
+  backdrop-filter: blur(10px);
+}
+
+.regenerate-btn:hover {
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.2), rgba(16, 185, 129, 0.2));
+  border-color: rgba(34, 197, 94, 0.5);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.15);
+}
+
+.regenerate-btn:active {
+  transform: translateY(0);
 }
 
 .title {

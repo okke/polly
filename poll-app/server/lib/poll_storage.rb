@@ -28,6 +28,18 @@ class PollStorage
     poll_id
   end
   
+  # Update an existing poll
+  def self.update_poll(poll_id, poll_data)
+    poll_data[:id] = poll_id
+    poll_data[:updated_at] = Time.now.utc.iso8601
+    
+    file_path = poll_file_path(poll_id)
+    File.write(file_path, JSON.pretty_generate(poll_data))
+    
+    puts "[POLL STORAGE] Updated poll: #{poll_id}"
+    poll_id
+  end
+  
   # Load a specific poll by ID
   def self.load_poll(poll_id)
     file_path = poll_file_path(poll_id)

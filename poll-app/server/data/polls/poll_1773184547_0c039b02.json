@@ -1,5 +1,5 @@
 {
-  "title": "Common Ground in Soup Tasting",
+  "title": "Exploring Perspectives on Soup Tasting",
   "statements": [
     {
       "text": "A soup should be judged first at serving temperature, not while actively cooking.",
@@ -12,6 +12,14 @@
     {
       "text": "Blind tasting is the only reliable way for chefs to evaluate soup without bias.",
       "id": "s3"
+    },
+    {
+      "text": "A soup's aroma is more critical than its flavor profile in initial tasting.",
+      "id": "s4"
+    },
+    {
+      "text": "Presentation has a greater impact on soup appreciation than its actual taste.",
+      "id": "s5"
     }
   ],
   "context": {
@@ -22,5 +30,7 @@
   },
   "id": "poll_1773184547_0c039b02",
   "created_at": "2026-03-10T23:15:47Z",
-  "updated_at": "2026-03-10T23:15:50Z"
+  "updated_at": "2026-03-12T18:29:00Z",
+  "id": "poll_1773184547_0c039b02",
+  "updated_at": "2026-03-12T18:29:00Z"
 }
