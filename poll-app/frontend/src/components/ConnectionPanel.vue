@@ -1,5 +1,5 @@
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import QRCodeVue from 'qrcode.vue'
 
 const props = defineProps({
@@ -18,6 +18,7 @@ const props = defineProps({
 })
 
 const copied = ref(false)
+const showQRModal = ref(false)
 
 const joinUrl = computed(() => props.serverInfo?.url || 'http://localhost:4567')
 
@@ -32,6 +33,28 @@ async function copyUrl() {
     console.error('Failed to copy:', e)
   }
 }
+
+function openQRModal() {
+  showQRModal.value = true
+}
+
+function closeQRModal() {
+  showQRModal.value = false
+}
+
+function handleKeydown(e) {
+  if (e.key === 'Escape' && showQRModal.value) {
+    closeQRModal()
+  }
+}
+
+onMounted(() => {
+  window.addEventListener('keydown', handleKeydown)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('keydown', handleKeydown)
+})
 </script>
 
 <template>
@@ -43,7 +66,7 @@ async function copyUrl() {
     
     <!-- QR Code -->
     <div class="qr-container">
-      <div class="qr-frame">
+      <div class="qr-frame" @click="openQRModal" title="Click to enlarge">
         <div class="qr-corner tl"></div>
         <div class="qr-corner tr"></div>
         <div class="qr-corner bl"></div>
@@ -75,6 +98,42 @@ async function copyUrl() {
         <span class="output">voted</span>
       </div>
     </div>
+
+    <!-- Large QR Code Modal -->
+    <Teleport to="body">
+      <Transition name="modal">
+        <div v-if="showQRModal" class="qr-modal-overlay" @click="closeQRModal">
+          <div class="qr-modal" @click.stop>
+            <button class="qr-modal-close" @click="closeQRModal" title="Close (ESC)">
+              ✕
+            </button>
+            
+            <div class="qr-modal-content">
+              <h3 class="qr-modal-title">Scan to Join</h3>
+              <p class="qr-modal-url">{{ joinUrl }}</p>
+              
+              <div class="qr-modal-frame">
+                <div class="qr-corner tl"></div>
+                <div class="qr-corner tr"></div>
+                <div class="qr-corner bl"></div>
+                <div class="qr-corner br"></div>
+                
+                <QRCodeVue 
+                  :value="joinUrl"
+                  :size="400"
+                  level="M"
+                  render-as="svg"
+                  :margin="2"
+                  class="qr-code-large"
+                />
+              </div>
+              
+              <p class="qr-modal-hint">Click outside to close</p>
+            </div>
+          </div>
+        </div>
+      </Transition>
+    </Teleport>
   </div>
 </template>
 
@@ -114,6 +173,12 @@ async function copyUrl() {
   padding: var(--space-4);
   background: white;
   border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: transform var(--duration-fast) var(--ease-out);
+}
+
+.qr-frame:hover {
+  transform: scale(1.02);
 }
 
 .qr-corner {
@@ -265,5 +330,134 @@ async function copyUrl() {
 .cursor {
   color: var(--text-accent);
   animation: blink 1s step-end infinite;
+}
+
+/* QR Modal */
+.qr-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: var(--space-4);
+}
+
+.qr-modal {
+  background: var(--bg-elevated);
+  border-radius: var(--radius-xl);
+  border: 1px solid var(--border-default);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  position: relative;
+  max-width: 600px;
+  width: 100%;
+}
+
+.qr-modal-close {
+  position: absolute;
+  top: var(--space-4);
+  right: var(--space-4);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: var(--text-primary);
+  font-size: 1.25rem;
+  cursor: pointer;
+  transition: all var(--duration-fast) var(--ease-out);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+
+.qr-modal-close:hover {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: rgba(239, 68, 68, 0.5);
+  transform: rotate(90deg);
+}
+
+.qr-modal-content {
+  padding: var(--space-8);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-5);
+}
+
+.qr-modal-title {
+  font-size: var(--text-2xl);
+  font-weight: var(--font-bold);
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.qr-modal-url {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+  background: var(--bg-primary);
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+  margin: 0;
+}
+
+.qr-modal-frame {
+  position: relative;
+  padding: var(--space-6);
+  background: white;
+  border-radius: var(--radius-xl);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.qr-code-large {
+  display: block;
+}
+
+.qr-modal-hint {
+  font-size: var(--text-sm);
+  color: var(--text-tertiary);
+  margin: 0;
+  font-style: italic;
+}
+
+/* Modal transitions */
+.modal-enter-active,
+.modal-leave-active {
+  transition: opacity var(--duration-medium) var(--ease-out);
+}
+
+.modal-enter-active .qr-modal,
+.modal-leave-active .qr-modal {
+  transition: transform var(--duration-medium) var(--ease-out);
+}
+
+.modal-enter-from,
+.modal-leave-to {
+  opacity: 0;
+}
+
+.modal-enter-from .qr-modal,
+.modal-leave-to .qr-modal {
+  transform: scale(0.9);
+}
+
+@media (max-width: 640px) {
+  .qr-modal-content {
+    padding: var(--space-6);
+  }
+  
+  .qr-modal-frame {
+    padding: var(--space-4);
+  }
+  
+  .qr-modal-close {
+    top: var(--space-2);
+    right: var(--space-2);
+  }
 }
 </style>

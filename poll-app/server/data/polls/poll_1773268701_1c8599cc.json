@@ -1,0 +1,47 @@
+{
+  "title": "Weird Language Flexes: Worth It?",
+  "statements": [
+    {
+      "text": "If your best language flex is macros, the language is probably doing too much.",
+      "id": "s1"
+    },
+    {
+      "text": "Pattern matching is mostly just prettier if-else with a better PR team.",
+      "id": "s2"
+    },
+    {
+      "text": "Operator overloading is a party trick that ages badly in real codebases.",
+      "id": "s3"
+    },
+    {
+      "text": "Haskell-style type magic impresses devs more than it helps teams ship.",
+      "id": "s4"
+    },
+    {
+      "text": "If your language needs monads explained at the bar, it already lost.",
+      "id": "s5"
+    },
+    {
+      "text": "Dependent types are brilliant in theory and a productivity tax in practice.",
+      "id": "s6"
+    },
+    {
+      "text": "Metaprogramming is often just writing bugs that compile before runtime.",
+      "id": "s7"
+    },
+    {
+      "text": "The cooler the language feature sounds, the less often it earns its keep.",
+      "id": "s8"
+    }
+  ],
+  "context": {
+    "topic": "exotic software development language features",
+    "tone": "casual",
+    "audience": "software developers having a beer and some snacks",
+    "additional_context": "Many developers brag about very specific language features but are those features worth bragging about",
+    "additional_instructions": "come up with examples and let's see if the developers in the bar agree with it"
+  },
+  "id": "poll_1773268701_1c8599cc",
+  "created_at": "2026-03-11T22:38:21Z",
+  "updated_at": "2026-03-11T22:39:32Z"
+}

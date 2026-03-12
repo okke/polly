@@ -291,7 +291,9 @@ onUnmounted(() => {
           </button>
           
           <div v-if="serverInfo" class="join-url-header">
-            <code class="header-url">{{ serverInfo.url }}</code>
+            <a :href="serverInfo.url" target="_blank" rel="noopener noreferrer" class="header-url-link">
+              <code class="header-url">{{ serverInfo.url }}</code>
+            </a>
           </div>
           
           <div class="connection-status" :class="{ connected: isConnected }">
@@ -553,11 +555,27 @@ onUnmounted(() => {
   backdrop-filter: blur(10px);
 }
 
+.header-url-link {
+  text-decoration: none;
+  display: inline-block;
+  transition: all 0.2s ease;
+  cursor: pointer;
+}
+
+.header-url-link:hover {
+  transform: translateY(-1px);
+}
+
+.header-url-link:hover .header-url {
+  color: var(--accent-primary);
+}
+
 .header-url {
   font-family: var(--font-mono);
   font-size: var(--text-sm);
   color: var(--text-primary);
   font-weight: var(--font-medium);
+  transition: color 0.2s ease;
 }
 
 /* Layout */
