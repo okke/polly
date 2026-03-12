@@ -4,6 +4,8 @@ import AboutView from './views/AboutView.vue'
 import PollView from './views/PollView.vue'
 import AdminView from './views/AdminView.vue'
 import PresentationView from './views/PresentationView.vue'
+import ReviewView from './views/ReviewView.vue'
+import ReviewFullView from './views/ReviewFullView.vue'
 
 const routes = [
   {
@@ -25,6 +27,16 @@ const routes = [
     path: '/admin',
     name: 'admin',
     component: AdminView
+  },
+  {
+    path: '/review',
+    name: 'review',
+    component: ReviewView
+  },
+  {
+    path: '/review/full',
+    name: 'review-full',
+    component: ReviewFullView
   },
   {
     path: '/presentation',
