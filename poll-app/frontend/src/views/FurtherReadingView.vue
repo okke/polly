@@ -10,83 +10,75 @@ function goHome() {
 const readings = [
   {
     id: 1,
-    title: 'Software 3.0',
+    title: 'Software 2.0',
     author: 'Andrej Karpathy',
-    link: 'https://www.latent.space/p/software-3-0',
-    description: 'Proposes three generations of software development: traditional programming (1.0), machine learning models (2.0), and natural language prompts to AI systems (3.0). Natural language becomes a programming interface where AI models act as universal interpreters.',
-    tags: ['Conceptual Framework', 'Evolution']
+    link: 'https://karpathy.medium.com/software-2-0-a64152b37c35',
+    description: 'Introduced the concept of Software 2.0, a shift where machine learning models replace traditional hand-written algorithms. Describes two paradigms: Software 1.0 (traditional explicit programming) and Software 2.0 (behavior learned through training neural networks). Laid the groundwork for discussions about AI-generated code.',
+    tags: ['Foundational', 'Neural Networks']
   },
   {
     id: 2,
-    title: 'Agentic Engineering',
+    title: 'Software Is Changing (Again)',
     author: 'Andrej Karpathy',
-    link: 'https://www.businessinsider.com/agentic-engineering-andrej-karpathy-vibe-coding-2026-2',
-    description: 'Distinguishes between "vibe coding" (casual prompting) and "agentic engineering" (autonomous agents executing development loops). AI agents operate as autonomous collaborators rather than passive assistants, with developers defining goals and guiding architecture.',
-    tags: ['Conceptual Framework', 'Autonomy']
+    link: 'https://www.youtube.com/watch?v=LCEmiRjPEtQ',
+    description: 'Presentation explaining how deep learning and language models are transforming software development. Discusses the increasing importance of neural network systems, emergence of AI-assisted coding tools, and the possibility that natural language becomes a programming interface.',
+    tags: ['Presentation', 'AI Tools']
   },
   {
     id: 3,
-    title: 'Agentic Software Engineering: Foundational Pillars and a Research Roadmap',
-    author: 'Multiple academic researchers',
-    link: 'https://www.researchgate.net/publication/395355277_Agentic_Software_Engineering_Foundational_Pillars_and_a_Research_Roadmap',
-    description: 'Proposes a research framework for agent-driven software development (SE 3.0) with Human Command Environment, Agent Execution Environment, and feedback systems. Outlines a roadmap for future research in agent-based development.',
-    tags: ['Research', 'Framework']
-  },
-  {
-    id: 4,
     title: 'Agentic Engineering Patterns',
     author: 'Simon Willison',
-    link: 'https://simonwillison.net/2026/02/23/agentic-engineering-patterns/',
-    description: 'Explores practical patterns for working with coding agents, focusing on strong test suites, iterative agent loops, and tightly constrained environments. Key insight: when generating code becomes cheap, validation becomes the bottleneck.',
+    link: 'https://simonwillison.net/2026/Feb/23/agentic-engineering-patterns/',
+    description: 'Explores practical patterns for working with coding agents and AI-driven workflows. Argues that AI tools reduce code generation costs, shifting the bottleneck to validation and testing. Emphasizes iterative development loops, strict testing discipline, and constrained execution environments.',
     tags: ['Practical', 'Patterns', 'Testing']
   },
   {
+    id: 4,
+    title: 'Code Is Cheap',
+    author: 'Simon Willison',
+    link: 'https://simonwillison.net/guides/agentic-engineering-patterns/code-is-cheap/',
+    description: 'Highlights the central insight: when code generation costs approach zero, the real challenge becomes ensuring correctness and reliability. Explains why testing, architecture, design decisions, and validation workflows are now more important than ever.',
+    tags: ['Philosophy', 'Validation']
+  },
+  {
     id: 5,
-    title: 'Agentic Engineering vs Vibe Coding',
-    author: 'Martin Fowler',
-    link: 'https://martinfowler.com/articles/agentic-engineering.html',
-    description: 'Nuanced analysis distinguishing vibe coding (non-experts generating code) from agentic engineering (professionals orchestrating AI agents). Argues that experienced engineers become more valuable because system architecture, validation, and testing remain complex.',
-    tags: ['Analysis', 'Professional Practice']
+    title: 'First Run the Tests',
+    author: 'Simon Willison',
+    link: 'https://simonwillison.net/guides/agentic-engineering-patterns/first-run-the-tests/',
+    description: 'Explains why automated tests are essential when working with AI coding agents. Without robust testing, errors and regressions quickly accumulate. Emphasizes comprehensive automated tests, reproducible development environments, and strong feedback loops.',
+    tags: ['Testing', 'Best Practices']
   },
   {
     id: 6,
-    title: 'LLM Predictions for 2026',
-    author: 'Simon Willison',
-    link: 'https://simonwillison.net/2026/01/08/llm-predictions/',
-    description: 'Predicts the emergence of asynchronous coding agents, automated development pipelines, and AI-assisted research. Developers increasingly supervise systems that write code, run experiments, evaluate results, and propose improvements.',
-    tags: ['Predictions', 'Future Trends']
+    title: 'Agentic Software Engineering: Foundational Pillars and a Research Roadmap',
+    author: 'Multiple researchers',
+    link: 'https://arxiv.org/abs/2509.06216',
+    description: 'Academic paper proposing a structured research agenda for agent-driven development. Introduces architecture with human command environment, agent execution environment, and automated evaluation mechanisms. Describes a future where AI agents carry out development tasks while humans define goals.',
+    tags: ['Research', 'Framework']
   },
   {
     id: 7,
     title: 'Agentic Design Patterns: A System-Theoretic Framework',
-    author: 'Academic research team',
+    author: 'Multiple researchers',
     link: 'https://arxiv.org/abs/2601.19752',
-    description: 'Formalizes agentic system architecture with five functional subsystems: reasoning, perception, action execution, learning, and communication. Connects ideas from control theory, distributed systems, and AI research.',
+    description: 'Formalizes autonomous agent system design with interacting subsystems: reasoning, perception, execution, learning, and communication. Framework draws from distributed systems, control theory, and artificial intelligence.',
     tags: ['Research', 'Architecture', 'Theory']
   },
   {
     id: 8,
     title: 'Configuring Agentic AI Coding Tools',
-    author: 'Academic research team',
+    author: 'Multiple researchers',
     link: 'https://arxiv.org/abs/2602.14690',
-    description: 'Analyzes thousands of repositories using AI coding agents, discovering the emergence of AGENTS.md configuration files defining agent instructions, tool permissions, development workflows, and evaluation rules.',
+    description: 'Analyzes thousands of open-source repositories using AI coding agents. Discovered growing pattern of AGENTS.md configuration files defining agent permissions, development workflows, tool access, and evaluation strategies. Suggests configuring AI agents may become standard practice.',
     tags: ['Research', 'Configuration', 'Best Practices']
   },
   {
     id: 9,
     title: 'Why Agentic Pull Requests Get Rejected',
-    author: 'Academic research team',
+    author: 'Multiple researchers',
     link: 'https://arxiv.org/abs/2602.04226',
-    description: 'Studies AI-generated pull requests, finding they are accepted less frequently due to incorrect assumptions, incomplete reasoning, and tool misuse. Highlights the critical importance of human oversight in the development process.',
+    description: 'Investigates AI-generated pull requests, finding they are often rejected due to incorrect assumptions about the codebase, incomplete reasoning about system behavior, and improper tool usage. Highlights the continued importance of human review and engineering judgment.',
     tags: ['Research', 'Quality', 'Human Oversight']
-  },
-  {
-    id: 10,
-    title: 'WINK: Recovering from Misbehaviors in Coding Agents',
-    author: 'Academic research team',
-    link: 'https://arxiv.org/abs/2602.17037',
-    description: 'Focuses on improving reliability by addressing common failure modes: specification drift, reasoning errors, tool misuse, and environment inconsistencies. Proposes framework for detecting failures and guiding agents toward correct behavior.',
-    tags: ['Research', 'Reliability', 'Error Recovery']
   }
 ]
 </script>
@@ -104,65 +96,33 @@ const readings = [
         <div class="header-content">
           <h1 class="reading-title">
             <span class="title-icon">📚</span>
-            Further Reading
+            Agentic Software Engineering
           </h1>
-          <p class="reading-subtitle">The Rise of Agentic Software Engineering</p>
+          <p class="reading-subtitle">Influential Essays, Articles, and Research (2017–2026)</p>
         </div>
       </header>
 
       <!-- Introduction Card -->
       <div class="intro-card glass-card">
-        <h2 class="intro-title">Influential Essays and Papers (2025–2026)</h2>
+        <h2 class="intro-title">Introduction</h2>
         <div class="intro-content">
           <p>
-            Over the past few years, rapid advances in large language models (LLMs) have triggered a new discussion: 
-            <strong>is programming as we know it ending?</strong>
+            Recent advances in large language models and AI tooling have sparked an intense debate within the 
+            software engineering community about the future of programming.
           </p>
           <p>
-            While software development itself is not disappearing, the <strong>role of the developer is shifting</strong>. 
-            Instead of writing every line of code manually, developers increasingly:
+            Many researchers and practitioners argue that we are moving toward a new paradigm often described as 
+            <strong>agentic software engineering</strong>. In this paradigm:
           </p>
           <ul class="shift-list">
-            <li>Describe intent</li>
-            <li>Supervise AI coding agents</li>
-            <li>Validate generated implementations</li>
-            <li>Orchestrate autonomous development workflows</li>
+            <li>AI systems generate large portions of software</li>
+            <li>Autonomous agents perform development tasks</li>
+            <li>Developers supervise, guide, and validate outcomes rather than writing every line manually</li>
           </ul>
           <p>
-            This collection summarizes <strong>ten of the most influential works</strong> from leading AI researchers, 
-            experienced software engineers, and academic research groups discussing this transition toward 
-            <em>agentic software engineering</em>.
+            This collection provides an overview of several <strong>influential essays, talks, and research papers</strong> 
+            that have shaped the discussion around the future of programming and the emergence of agent-based software development.
           </p>
-        </div>
-      </div>
-
-      <!-- Evolution Timeline -->
-      <div class="evolution-card glass-card">
-        <h3 class="section-title">The Evolution of Programming</h3>
-        <div class="timeline">
-          <div class="timeline-item">
-            <div class="timeline-marker era-1"></div>
-            <div class="timeline-content">
-              <div class="timeline-label">Traditional Programming</div>
-              <div class="timeline-desc">Human developers write every line of code</div>
-            </div>
-          </div>
-          <div class="timeline-connector"></div>
-          <div class="timeline-item">
-            <div class="timeline-marker era-2"></div>
-            <div class="timeline-content">
-              <div class="timeline-label">AI-Assisted Programming</div>
-              <div class="timeline-desc">AI tools help generate and modify code</div>
-            </div>
-          </div>
-          <div class="timeline-connector"></div>
-          <div class="timeline-item">
-            <div class="timeline-marker era-3"></div>
-            <div class="timeline-content">
-              <div class="timeline-label">Agentic Software Engineering</div>
-              <div class="timeline-desc">Autonomous agents plan, implement, test, and refine software under human supervision</div>
-            </div>
-          </div>
         </div>
       </div>
 
@@ -196,24 +156,26 @@ const readings = [
 
       <!-- Conclusion -->
       <div class="conclusion-card glass-card">
-        <h3 class="section-title">The Emerging Narrative</h3>
+        <h3 class="section-title">Conclusion</h3>
         <div class="conclusion-content">
           <p>
-            Across these essays and research papers, a consistent narrative is emerging. Software engineering 
-            is not ending—it's transforming.
+            The essays and research papers described here illustrate a significant shift in how software is created.
           </p>
           <p>
-            The developer's role is shifting toward:
+            Traditional programming workflows focus on developers writing code manually. In contrast, emerging 
+            agentic workflows emphasize:
           </p>
           <ul class="conclusion-list">
-            <li><strong>System design</strong> and architectural thinking</li>
-            <li><strong>Supervision</strong> of autonomous agents</li>
-            <li><strong>Validation</strong> of generated software</li>
-            <li><strong>Orchestration</strong> of complex development workflows</li>
+            <li><strong>Describing goals</strong> rather than implementation details</li>
+            <li><strong>Orchestrating autonomous agents</strong> to perform development tasks</li>
+            <li><strong>Validating generated implementations</strong> through rigorous testing</li>
+            <li><strong>Supervising iterative development processes</strong> with human oversight</li>
           </ul>
           <p class="conclusion-note">
-            The next decade will likely determine whether agentic systems become the dominant paradigm 
-            in software development.
+            Rather than eliminating programmers, these developments appear to change the role of software engineers, 
+            emphasizing architecture, system design, and evaluation of AI-generated solutions. As AI systems continue 
+            to improve, understanding and mastering these new workflows will likely become an important skill for 
+            modern software engineers.
           </p>
         </div>
       </div>
@@ -362,83 +324,13 @@ const readings = [
   color: var(--text-secondary);
 }
 
-/* Evolution Timeline */
-.evolution-card {
-  padding: var(--space-8);
-}
-
+/* Section Title */
 .section-title {
   font-size: var(--text-xl);
   font-weight: var(--font-semibold);
   color: var(--text-primary);
   margin: 0 0 var(--space-6);
   text-align: center;
-}
-
-.timeline {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-}
-
-.timeline-item {
-  display: flex;
-  align-items: center;
-  gap: var(--space-4);
-}
-
-.timeline-marker {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: var(--font-bold);
-  font-size: var(--text-sm);
-  border: 3px solid;
-}
-
-.timeline-marker.era-1 {
-  background: rgba(239, 68, 68, 0.1);
-  border-color: #ef4444;
-}
-
-.timeline-marker.era-2 {
-  background: rgba(234, 179, 8, 0.1);
-  border-color: #eab308;
-}
-
-.timeline-marker.era-3 {
-  background: rgba(34, 197, 94, 0.1);
-  border-color: #22c55e;
-}
-
-.timeline-content {
-  flex: 1;
-  padding: var(--space-4);
-  background: var(--bg-secondary);
-  border-radius: var(--radius-md);
-}
-
-.timeline-label {
-  font-weight: var(--font-semibold);
-  color: var(--text-primary);
-  margin-bottom: var(--space-2);
-}
-
-.timeline-desc {
-  font-size: var(--text-sm);
-  color: var(--text-secondary);
-  line-height: 1.5;
-}
-
-.timeline-connector {
-  width: 2px;
-  height: 30px;
-  background: var(--border-default);
-  margin-left: 19px;
 }
 
 /* Reading Cards Grid */
@@ -603,7 +495,6 @@ const readings = [
   }
 
   .intro-card,
-  .evolution-card,
   .conclusion-card {
     padding: var(--space-5);
   }
@@ -619,16 +510,6 @@ const readings = [
 
   .readings-grid {
     grid-template-columns: 1fr;
-  }
-
-  .timeline-item {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .timeline-connector {
-    margin-left: 19px;
-    height: 20px;
   }
 }
 </style>

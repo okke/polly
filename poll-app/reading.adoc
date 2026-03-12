@@ -1,5 +1,5 @@
-= The Rise of Agentic Software Engineering
-:subtitle: Influential Essays and Papers (2025–2026)
+= Agentic Software Engineering
+:subtitle: Influential Essays, Articles, and Research (2017–2026)
 :author: Research Overview
 :toc:
 :toclevels: 2
@@ -7,317 +7,254 @@
 
 == Introduction
 
-Over the past few years, rapid advances in large language models (LLMs) have triggered a new discussion within the software engineering community: *is programming as we know it ending?*
+Recent advances in large language models and AI tooling have sparked an intense debate within the software engineering community about the future of programming.
 
-While software development itself is not disappearing, many researchers and practitioners argue that the **role of the developer is shifting**. Instead of writing every line of code manually, developers increasingly:
+Many researchers and practitioners argue that we are moving toward a new paradigm often described as *agentic software engineering*. In this paradigm:
 
-* describe intent
-* supervise AI coding agents
-* validate generated implementations
-* orchestrate autonomous development workflows
+* AI systems generate large portions of software
+* autonomous agents perform development tasks
+* developers supervise, guide, and validate outcomes rather than writing every line of code manually
 
-This document summarizes **ten of the most influential essays and research papers (2025–2026)** discussing this transition toward *agentic software engineering*.
+This document provides an overview of several **influential essays, talks, and research papers** that have shaped the discussion around the future of programming and the emergence of agent-based software development.
 
-These works come from:
-
-* leading AI researchers
-* experienced software engineers
-* academic research groups
-
-Together they provide a useful overview of the emerging paradigm.
+The sources included here are widely referenced within engineering and AI communities.
 
 ---
 
-== 1. Andrej Karpathy — Software 3.0
+== 1. Andrej Karpathy — Software 2.0
 
-Author: Andrej Karpathy
+Author::
+Andrej Karpathy
 
-Link:
-https://www.latent.space/p/software-3-0
+Link::
+https://karpathy.medium.com/software-2-0-a64152b37c35
 
-This essay is widely considered one of the most influential conceptual frameworks for understanding the evolution of programming.
+This influential essay introduced the concept of *Software 2.0*, a shift in which machine learning models replace traditional hand-written algorithms.
 
-Karpathy proposes three generations of software development:
+Karpathy describes two distinct programming paradigms:
 
+[cols="1,3"]
 |===
-|Era |Description
-
 |Software 1.0
-|Traditional programming where developers explicitly write code.
+|Traditional software written explicitly by programmers.
 
 |Software 2.0
-|Machine learning models trained on data where weights encode behavior.
-
-|Software 3.0
-|Programs written using **natural language prompts to AI systems**.
+|Software behavior learned through training neural networks on data.
 |===
 
-In this framework, prompts become a form of programming language.
-
-Key ideas:
-
-* Natural language becomes a programming interface.
-* AI models act as universal interpreters.
-* Code increasingly emerges from interaction with AI systems.
-
-Karpathy’s concept has heavily influenced the current discussion around **AI-native development workflows**.
+This essay laid the intellectual groundwork for later discussions about **AI-generated code and agentic programming systems**.
 
 ---
 
-== 2. Andrej Karpathy — Agentic Engineering
+== 2. Andrej Karpathy — Software Is Changing (Again)
 
-Author: Andrej Karpathy
+Author::
+Andrej Karpathy
 
-Example discussion:
-https://www.businessinsider.com/agentic-engineering-andrej-karpathy-vibe-coding-2026-2
+Link::
+https://www.youtube.com/watch?v=LCEmiRjPEtQ
 
-Karpathy later expanded the Software 3.0 concept with the idea of **agentic engineering**.
+In this widely viewed presentation, Karpathy explains how advances in deep learning and language models are transforming the software development process.
 
-He distinguishes between two approaches:
+Key themes discussed include:
 
-|===
-|Concept |Meaning
+* the increasing importance of neural network systems
+* the emergence of AI-assisted coding tools
+* the possibility that natural language becomes a programming interface
 
-|Vibe coding
-|Developers casually prompting AI to generate code.
-
-|Agentic engineering
-|AI agents autonomously executing development loops including planning, coding, testing, and iteration.
-|===
-
-Agentic systems operate more like autonomous collaborators rather than passive assistants.
-
-In this model developers primarily:
-
-* define goals
-* review outcomes
-* guide system architecture
+The talk is frequently referenced in discussions about the future of software engineering.
 
 ---
 
-== 3. Agentic Software Engineering: Foundational Pillars and a Research Roadmap
+== 3. Simon Willison — Agentic Engineering Patterns
 
-Authors: Multiple academic researchers
+Author::
+Simon Willison
 
-Link:
-https://www.researchgate.net/publication/395355277_Agentic_Software_Engineering_Foundational_Pillars_and_a_Research_Roadmap
+Link::
+https://simonwillison.net/2026/Feb/23/agentic-engineering-patterns/
 
-This paper proposes a research framework for **agent-driven software development**.
+This article explores practical patterns for working effectively with coding agents and AI-driven development workflows.
 
-The authors describe software engineering evolving toward what they call **SE 3.0**.
+Willison argues that AI tools dramatically reduce the cost of generating code, which shifts the bottleneck toward validation and testing.
 
-Core architectural elements include:
+Important principles discussed include:
 
-* Human Command Environment
-* Agent Execution Environment
-* Feedback and evaluation systems
-
-In this model:
-
-* humans define objectives
-* agents execute tasks
-* results are validated through automated feedback loops
-
-The paper outlines a roadmap for future research in agent-based development.
+* iterative development loops
+* strict testing discipline
+* constrained execution environments for agents
 
 ---
 
-== 4. Simon Willison — Agentic Engineering Patterns
+== 4. Simon Willison — Code Is Cheap
 
-Author: Simon Willison
+Author::
+Simon Willison
 
-Link:
-https://simonwillison.net/2026/02/23/agentic-engineering-patterns/
+Link::
+https://simonwillison.net/guides/agentic-engineering-patterns/code-is-cheap/
 
-This essay explores **practical patterns for working with coding agents**.
-
-Willison focuses on how engineers can structure development processes to make agentic systems reliable.
-
-Key practices include:
-
-* starting with strong test suites
-* running iterative agent loops
-* tightly constraining the environment in which agents operate
-
-One of the most important observations from this essay is:
-
-When generating code becomes cheap, **validation becomes the bottleneck**.
+This article highlights a central insight about AI-assisted programming:
 
 ---
 
-== 5. Martin Fowler — Agentic Engineering vs Vibe Coding
-
-Author: Martin Fowler
-
-Link:
-https://martinfowler.com/articles/agentic-engineering.html
-
-Fowler provides a nuanced analysis of how AI is changing software development.
-
-He distinguishes between two phenomena:
-
-|===
-|Term |Description
-
-|Vibe coding
-|Non-experts generating code through prompts.
-
-|Agentic engineering
-|Professional developers orchestrating AI agents to perform engineering tasks.
-|===
-
-Fowler argues that **experienced engineers become more valuable**, not less, because:
-
-* system architecture becomes more complex
-* validation and testing remain difficult
-* AI systems require careful guidance
+When the cost of generating code approaches zero, the real challenge becomes ensuring correctness and reliability.
 
 ---
 
-== 6. Simon Willison — LLM Predictions for 2026
+The article explains why:
 
-Author: Simon Willison
-
-Link:
-https://simonwillison.net/2026/01/08/llm-predictions/
-
-This article outlines predictions for the role of AI in software development.
-
-Willison predicts the emergence of:
-
-* asynchronous coding agents
-* automated development pipelines
-* AI-assisted research and debugging
-
-Developers increasingly supervise systems that:
-
-* write code
-* run experiments
-* evaluate results
-* propose improvements.
+* testing becomes more important than ever
+* architecture and design decisions gain importance
+* validation workflows become central to engineering practice
 
 ---
 
-== 7. Agentic Design Patterns: A System-Theoretic Framework
+== 5. Simon Willison — First Run the Tests
 
-Authors: Academic research team
+Author::
+Simon Willison
 
-Link:
+Link::
+https://simonwillison.net/guides/agentic-engineering-patterns/first-run-the-tests/
+
+This article explains why automated tests are essential when working with AI coding agents.
+
+Agents can rapidly generate and modify code, but without a robust testing framework, errors and regressions quickly accumulate.
+
+The article emphasizes the importance of:
+
+* comprehensive automated tests
+* reproducible development environments
+* strong feedback loops between agents and evaluation systems
+
+---
+
+== 6. Martin Fowler — AI-Assisted Programming
+
+Author::
+Martin Fowler
+
+Link::
+https://martinfowler.com/articles/ai-assisted-programming.html
+
+Martin Fowler provides a balanced analysis of how AI tools affect software development practices.
+
+The article explores how AI systems can assist developers with tasks such as:
+
+* code generation
+* refactoring
+* documentation
+* exploratory prototyping
+
+Fowler also emphasizes that professional engineering practices remain essential for producing reliable software systems.
+
+---
+
+== 7. Agentic Software Engineering: Foundational Pillars and a Research Roadmap
+
+Authors::
+Multiple researchers
+
+Link::
+https://arxiv.org/abs/2509.06216
+
+This academic paper proposes a structured research agenda for **agent-driven software development**.
+
+The authors introduce a conceptual architecture consisting of:
+
+* a human command environment
+* an agent execution environment
+* automated evaluation mechanisms
+
+The paper describes a future where AI agents carry out many development tasks while humans define goals and evaluate results.
+
+---
+
+== 8. Agentic Design Patterns: A System-Theoretic Framework
+
+Authors::
+Multiple researchers
+
+Link::
 https://arxiv.org/abs/2601.19752
 
-This paper attempts to formalize how **agentic systems should be architected**.
+This paper attempts to formalize how autonomous agent systems should be designed.
 
-It proposes five functional subsystems:
+It proposes a system architecture consisting of several interacting subsystems:
 
 * reasoning
 * perception
-* action execution
+* execution
 * learning
 * communication
 
-These systems together enable agents to operate autonomously within complex environments.
-
-The paper connects ideas from:
-
-* control theory
-* distributed systems
-* AI research
+The framework draws from ideas in distributed systems, control theory, and artificial intelligence.
 
 ---
 
-== 8. Configuring Agentic AI Coding Tools
+== 9. Configuring Agentic AI Coding Tools
 
-Authors: Academic research team
+Authors::
+Multiple researchers
 
-Link:
+Link::
 https://arxiv.org/abs/2602.14690
 
-This study analyzes thousands of repositories that use AI coding agents.
+This study analyzes thousands of open-source repositories that use AI coding agents.
 
-The researchers discovered that many projects now include **agent configuration files**.
+The researchers discovered a growing pattern of configuration files that define how agents should operate within a repository.
 
-A common emerging pattern is a file called:
-
-AGENTS.md
-
-These files define:
-
-* agent instructions
-* tool permissions
-* development workflows
-* evaluation rules
-
-This suggests that **configuring AI agents may become a standard part of software engineering infrastructure**.
+One emerging convention is a configuration file called:
 
 ---
 
-== 9. Why Agentic Pull Requests Get Rejected
+## AGENTS.md
 
-Authors: Academic research team
+Such files describe:
 
-Link:
+* agent permissions
+* development workflows
+* tool access
+* evaluation strategies
+
+This suggests that configuring AI agents may become a standard part of software engineering.
+
+---
+
+== 10. Why Agentic Pull Requests Get Rejected
+
+Authors::
+Multiple researchers
+
+Link::
 https://arxiv.org/abs/2602.04226
 
-This study investigates pull requests generated by coding agents.
+This research investigates pull requests generated by AI coding agents.
 
-Key findings:
+The study found that AI-generated pull requests are often rejected because of issues such as:
 
-* AI-generated pull requests are accepted less frequently.
-* Human reviewers remain skeptical of AI-generated code.
-* Common failure modes include:
-  ** incorrect assumptions
-  ** incomplete reasoning
-  ** misuse of development tools.
+* incorrect assumptions about the codebase
+* incomplete reasoning about system behavior
+* improper tool usage
 
-The research highlights the importance of **human oversight**.
-
----
-
-== 10. WINK: Recovering from Misbehaviors in Coding Agents
-
-Authors: Academic research team
-
-Link:
-https://arxiv.org/abs/2602.17037
-
-This research focuses on improving the reliability of coding agents.
-
-The authors found that coding agents often fail because of:
-
-* specification drift
-* reasoning errors
-* tool misuse
-* environment inconsistencies
-
-The WINK framework attempts to detect failures and guide agents back toward correct behavior.
-
-This research represents early work on **self-correcting agent systems**.
+The findings highlight the continued importance of human review and engineering judgment.
 
 ---
 
 == Conclusion
 
-Across these essays and research papers, a consistent narrative is emerging.
+The essays and research papers described in this document illustrate a significant shift in how software is created.
 
-Software engineering is moving from:
+Traditional programming workflows focus on developers writing code manually.
 
-Traditional programming::
+In contrast, emerging agentic workflows emphasize:
 
-Human developers write every line of code.
+* describing goals
+* orchestrating autonomous agents
+* validating generated implementations
+* supervising iterative development processes
 
-AI-assisted programming::
+Rather than eliminating programmers, these developments appear to **change the role of software engineers**, emphasizing architecture, system design, and evaluation of AI-generated solutions.
 
-AI tools help generate and modify code.
-
-Agentic software engineering::
-
-Autonomous agents plan, implement, test, and refine software under human supervision.
-
-This does not imply the end of software engineering, but rather a **shift in the developer's role** toward:
-
-* system design
-* architectural thinking
-* supervision of autonomous agents
-* validation of generated software.
-
-The next decade will likely determine whether agentic systems become the dominant paradigm in software development.
+As AI systems continue to improve, understanding and mastering these new workflows will likely become an important skill for modern software engineers.
