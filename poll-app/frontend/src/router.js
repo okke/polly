@@ -6,6 +6,7 @@ import AdminView from './views/AdminView.vue'
 import PresentationView from './views/PresentationView.vue'
 import ReviewView from './views/ReviewView.vue'
 import ReviewFullView from './views/ReviewFullView.vue'
+import FurtherReadingView from './views/FurtherReadingView.vue'
 
 const routes = [
   {
@@ -39,6 +40,11 @@ const routes = [
     component: ReviewFullView
   },
   {
+    path: '/reading',
+    name: 'reading',
+    component: FurtherReadingView
+  },
+  {
     path: '/presentation',
     redirect: '/presentation/0'
   },
@@ -51,7 +57,15 @@ const routes = [
 
 const router = createRouter({
   history: createWebHistory(),
-  routes
+  routes,
+  scrollBehavior(to, from, savedPosition) {
+    // If there's a saved position (e.g., back button), use it
+    if (savedPosition) {
+      return savedPosition
+    }
+    // Otherwise, scroll to top
+    return { top: 0, behavior: 'smooth' }
+  }
 })
 
 export default router

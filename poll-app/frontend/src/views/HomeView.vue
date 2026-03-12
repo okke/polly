@@ -22,6 +22,10 @@ function goToPresentation() {
 function goToReview() {
   router.push('/review')
 }
+
+function goToReading() {
+  router.push('/reading')
+}
 </script>
 
 <template>
@@ -42,36 +46,51 @@ function goToReview() {
         
         <!-- Description -->
         <p class="description">
+          An experiment in agentic software engineering, built over 4 evenings.
           Share your opinions on thoughtful statements with instant results.
           Vote anonymously and see how others think in real-time.
         </p>
         
         <!-- CTA Buttons -->
-        <div class="cta-buttons">
-          <button class="cta-button" @click="goToVoting">
-            <span class="cta-icon">→</span>
-            <span>Start Voting</span>
-          </button>
-          
-          <button class="cta-button secondary" @click="goToPresentation">
-            <span class="cta-icon">📊</span>
-            <span>Presentation</span>
-          </button>
-          
-          <button class="cta-button secondary" @click="goToReview">
-            <span class="cta-icon">📋</span>
-            <span>Code Review</span>
-          </button>
-          
-          <button class="cta-button secondary" @click="goToAbout">
-            <span class="cta-icon">ℹ</span>
-            <span>About Me</span>
-          </button>
-          
-          <button class="cta-button secondary" @click="goToAdmin">
-            <span class="cta-icon">⚙</span>
-            <span>Admin</span>
-          </button>
+        <div class="button-groups">
+          <!-- Primary Actions -->
+          <div class="button-group">
+            <button class="cta-button" @click="goToVoting">
+              <span class="cta-icon">→</span>
+              <span>Start Voting</span>
+            </button>
+            
+            <button class="cta-button secondary" @click="goToAdmin">
+              <span class="cta-icon">⚙</span>
+              <span>Admin</span>
+            </button>
+          </div>
+
+          <!-- Documentation -->
+          <div class="button-group">
+            <button class="cta-button secondary" @click="goToAbout">
+              <span class="cta-icon">ℹ</span>
+              <span>About Me</span>
+            </button>
+            
+            <button class="cta-button secondary" @click="goToPresentation">
+              <span class="cta-icon">📊</span>
+              <span>Presentation</span>
+            </button>
+            
+            <button class="cta-button secondary" @click="goToReview">
+              <span class="cta-icon">📋</span>
+              <span>Code Review</span>
+            </button>
+          </div>
+
+          <!-- Further Reading -->
+          <div class="button-group">
+            <button class="cta-button secondary" @click="goToReading">
+              <span class="cta-icon">📚</span>
+              <span>Further Reading</span>
+            </button>
+          </div>
         </div>
         
         <!-- Features -->
@@ -182,12 +201,19 @@ function goToReview() {
   max-width: 500px;
 }
 
-.cta-buttons {
+.button-groups {
   display: flex;
-  gap: var(--space-4);
+  flex-direction: column;
+  gap: var(--space-8);
   margin-top: var(--space-4);
-  flex-wrap: wrap;
-  justify-content: center;
+  width: 100%;
+}
+
+.button-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  align-items: center;
 }
 
 .cta-button {
@@ -196,7 +222,7 @@ function goToReview() {
   justify-content: center;
   gap: var(--space-3);
   padding: var(--space-4) var(--space-8);
-  min-width: 180px;
+  width: 400px;
   background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(59, 130, 246, 0.2));
   border: 1px solid rgba(139, 92, 246, 0.4);
   border-radius: var(--radius-xl);
