@@ -1,7 +1,48 @@
 <script setup>
-import { useRouter } from 'vue-router'
+import { ref, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+import DisclaimerModal from '../components/DisclaimerModal.vue'
 
 const router = useRouter()
+const route = useRoute()
+const showDisclaimer = ref(false)
+
+onMounted(async () => {
+  // Always show disclaimer if on /disclaimer route
+  if (route.path === '/disclaimer') {
+    showDisclaimer.value = true
+    return
+  }
+  
+  try {
+    const response = await fetch('/api/disclaimer/status')
+    const data = await response.json()
+    showDisclaimer.value = !data.dismissed
+  } catch (error) {
+    console.error('Failed to check disclaimer status:', error)
+  }
+})
+
+async function handleDisclaimerDismiss() {
+  try {
+    await fetch('/api/disclaimer/dismiss', { method: 'POST' })
+    showDisclaimer.value = false
+    
+    // If on /disclaimer route, navigate to home
+    if (route.path === '/disclaimer') {
+      router.push('/')
+    }
+  } catch (error) {
+    console.error('Failed to dismiss disclaimer:', error)
+    // Still hide it on the frontend even if the API call fails
+    showDisclaimer.value = false
+    
+    // Navigate to home if on disclaimer route
+    if (route.path === '/disclaimer') {
+      router.push('/')
+    }
+  }
+}
 
 function goToVoting() {
   router.push('/vote')
@@ -110,6 +151,12 @@ function goToReading() {
         </div>
       </div>
     </div>
+    
+    <!-- Disclaimer Modal -->
+    <DisclaimerModal 
+      v-if="showDisclaimer" 
+      @dismiss="handleDisclaimerDismiss"
+    />
   </div>
 </template>
 

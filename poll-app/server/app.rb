@@ -34,6 +34,9 @@ CLIENTS = {}
 # In-memory vote storage
 VOTES = {}
 
+# Disclaimer state - resets on server restart
+DISCLAIMER_DISMISSED = false
+
 # Load poll data
 def load_poll
   poll = PollStorage.load_current_poll
@@ -358,6 +361,19 @@ get '/api/models' do
       details: e.message
     }.to_json
   end
+end
+
+# Check disclaimer status
+get '/api/disclaimer/status' do
+  content_type :json
+  { dismissed: DISCLAIMER_DISMISSED }.to_json
+end
+
+# Dismiss disclaimer
+post '/api/disclaimer/dismiss' do
+  content_type :json
+  DISCLAIMER_DISMISSED = true
+  { status: 'ok' }.to_json
 end
 
 # Export results as CSV
