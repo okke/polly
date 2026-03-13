@@ -158,19 +158,20 @@ poll-app/
 1. **Clone the repository**
    ```bash
    git clone <repository-url>
-   cd poll-app
+   cd polly
    ```
 
 2. **Install dependencies**
    ```bash
+   cd poll-app
    make install
    ```
    This installs both Ruby gems and Node packages.
 
 3. **Configure environment**
    ```bash
-   cp server/.env.example server/.env
-   # Edit server/.env and add your OpenAI API key:
+   cp poll-app/server/.env.example poll-app/server/.env
+   # Edit poll-app/server/.env and add your OpenAI API key:
    # OPENAI_API_KEY=sk-...
    ```
 
@@ -187,6 +188,9 @@ poll-app/
 ### Development Workflow
 
 ```bash
+# All commands should be run from the poll-app/ directory
+cd poll-app
+
 # Start backend and build frontend for production
 make start
 
@@ -264,15 +268,15 @@ The psychological analysis features use a distinctive personality:
 
 ## 📊 Data Storage
 
-Polls are stored as JSON files in `server/data/polls/`:
+Polls are stored as JSON files in `poll-app/server/data/polls/`:
 - Each poll has a unique ID
 - Metadata includes creation timestamp, statement count, and context
-- Active poll ID tracked in `server/data/current_poll.json`
+- Active poll ID tracked in `poll-app/server/data/current_poll.json`
 - Votes stored in-memory (reset on server restart)
 
 ## 🔧 Configuration
 
-### Server Configuration (`server/puma.rb`)
+### Server Configuration (`poll-app/server/puma.rb`)
 - Default port: 4567
 - Workers: 2
 - Min threads: 0
@@ -341,6 +345,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## ⚡ Quick Reference
 
 ```bash
+# All commands run from poll-app/ directory
+cd poll-app
+
 # Essential commands
 make install      # First-time setup
 make start        # Run the app
